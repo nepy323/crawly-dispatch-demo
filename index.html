@@ -103,7 +103,7 @@ button.sm{font-size:12px;padding:3px 9px}
 <details class="intro" open>
   <summary>這是什麼？（點這裡收合）</summary>
   <div class="cols">
-    <div><b>概念</b>辦公室裡的六張桌子，代表後台六類資料：訂單、時段、班表、報價、預約、定期單。事情越多，桌上的文件越高、員工越慌；爬爬會在桌子之間巡邏，抽回資料，有狀況就開口跟你說。</div>
+    <div><b>概念</b>辦公室裡的六張桌子，代表後台六類資料：訂單（含預約）、時段、班表、報價、增員、定期單。事情越多，桌上的文件越高、員工越慌；爬爬會在桌子之間巡邏，抽回資料，有狀況就開口跟你說。</div>
     <div><b>怎麼玩</b>① 看爬爬說了什麼，按<em>「爬一下」</em>。② 輸入<em>「爬 10/29 出班需求」</em>，或直接<em>點一張桌子</em>。③ 結果裡按<em>「幫我配班」</em>，依序聯絡候選人並點結果。也可以按「模擬新狀況進來」。</div>
     <div><b>請注意</b>這是氛圍示範：所有數字、人員與訂單都是虛構的示意資料，沒有連到任何系統，重新整理就會重來。</div>
   </div>
@@ -162,11 +162,11 @@ const sname=()=>pickA(staff).name;
 
 /* ================= 六張桌子與累積的東西 ================= */
 const DESKS=[
- {k:'order',name:'訂單桌',col:'#ff6b6b',x:40,y:150,items:[{k:'pending',l:'待處理',n:8},{k:'pay',l:'需付款',n:33},{k:'mismatch',l:'金額不匹配',n:312}]},
+ {k:'order',name:'訂單桌',col:'#ff6b6b',x:40,y:150,items:[{k:'pending',l:'待處理',n:8},{k:'pay',l:'需付款',n:33},{k:'mismatch',l:'金額不匹配',n:312},{k:'nottask',l:'任務未建立',n:3},{k:'unopened',l:'預約沒開單',n:2}]},
  {k:'slot',name:'時段桌',col:'#5aa9ff',x:150,y:150,items:[{k:'unconf',l:'人員未確認',n:1},{k:'nostart',l:'沒點開始',n:3},{k:'noend',l:'沒點結束',n:2},{k:'noaccept',l:'沒驗收',n:30}]},
  {k:'shift',name:'班表桌',col:'#5ef2a4',x:260,y:150,items:[{k:'need',l:'出班需求',n:6},{k:'standby',l:'待命時段',n:18},{k:'unassigned',l:'未完成派班',n:1}]},
  {k:'quote',name:'報價桌',col:'#ffb35e',x:40,y:255,items:[{k:'quoting',l:'估價中',n:5},{k:'stale',l:'報價沒動靜',n:2}]},
- {k:'book',name:'預約桌',col:'#ff8ad8',x:150,y:255,items:[{k:'nottask',l:'任務未建立',n:3},{k:'unopened',l:'預約沒開單',n:2}]},
+ {k:'recruit',name:'增員桌',col:'#b794ff',x:150,y:255,sub:()=>'等開課 '+item('recruit','wait').n+'/2 人',items:[{k:'wait',l:'面試後等開課',n:1},{k:'training',l:'8 小時課程中',n:2},{k:'trial',l:'配班試跑中',n:3},{k:'ready',l:'可自己開班',n:2}]},
  {k:'regular',name:'定期單桌',col:'#7fe0d6',x:260,y:255,items:[{k:'expiring',l:'即將到期',n:15},{k:'renew',l:'待續約',n:4}]},
 ];
 DESKS.forEach((d,i)=>{d.i=i;d.series=Array.from({length:24},()=>Math.random());d.flash=0;d.active=false;d.done=false;d.mx=d.x+44;d.my=d.y+17;d.tick=Math.random();d.load=0;d.disp=0;});
@@ -212,9 +212,9 @@ const wrap=(s,n)=>{const out=[];for(let i=0;i<s.length;i+=n)out.push(s.slice(i,i
 function spark(x,y,n,col,sp){for(let i=0;i<n;i++){const a=Math.random()*6.283,v=rr(10,(sp||50));sparks.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-10,life:1,col});}}
 
 /* ================= 小員工（越忙越慌） ================= */
-const CALM=[['新單進來','喝口茶'],['班表整齊','今天還好'],['人都到了','排好了'],['報價回來了','等回覆'],['沒新預約','很平靜'],['都續約了','一切順利']];
-const BUSYQ=[['金額又對不上','誰付款了?','電話響不停'],['還沒確認…','幫我催一下','驗收呢'],['缺人缺人','誰開班了?','這天滿了'],['督導呢?','報價沒回'],['預約進來了','要開單'],['快到期了','要續約嗎']];
-const WCOL=['#ff6b6b','#5aa9ff','#5ef2a4','#ffb35e','#ff8ad8','#7fe0d6'];
+const CALM=[['新單進來','喝口茶'],['班表整齊','今天還好'],['人都到了','排好了'],['報價回來了','等回覆'],['新人報到了','訓練順利'],['都續約了','一切順利']];
+const BUSYQ=[['金額又對不上','誰付款了?','預約要開單'],['還沒確認…','幫我催一下','驗收呢'],['缺人缺人','誰開班了?','這天滿了'],['督導呢?','報價沒回'],['新人還沒上線','誰來帶新人?','缺人缺人'],['快到期了','要續約嗎']];
+const WCOL=['#ff6b6b','#5aa9ff','#5ef2a4','#ffb35e','#b794ff','#7fe0d6'];
 const FLOOR_PTS=[[30,240],[110,242],[200,240],[300,243],[340,246],[80,362],[190,360],[300,362],[400,352]];
 class Worker{
   constructor(d){this.d=d;this.hx=d.x+44;this.hy=d.y+64;this.x=this.hx;this.y=this.hy;this.col=WCOL[d.i];this.st='type';this.t=rr(2,6);this.blink=0;this.nb=rr(1,4);this.say=null;this.sayT=0;this.nsay=rr(3,9);this.walk=null;this.look=0;this.ph=Math.random()*9;}
@@ -374,7 +374,7 @@ function drawDesk(d){
   else if(d.i===1||d.i===5){ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();s.forEach((v,i)=>{const px=sx+2+i*2.2,py=sy+sh-3-v*18;i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.stroke();}
   else if(d.i===2){for(let r=0;r<3;r++)for(let c=0;c<7;c++){const on=s[r*7+c]>.38;R(sx+3+c*7.4,sy+3+r*8,6,6,on?col+'cc':'#16304a');}}
   else if(d.i===3){for(let r=0;r<4;r++){R(sx+3,sy+3+r*6,3,3,['#ff8ad8','#5aa9ff','#ffb35e','#5ef2a4'][r]);R(sx+9,sy+4+r*6,8+s[r]*30,2,'#9fb4dc55');}}
-  else{for(let i=0;i<5;i++)R(sx+4+i*7,sy+3,5,5,i<Math.round(1+s[0]*4)?col:'#2a2440');for(let i=0;i<7;i++)R(sx+3,sy+13+i*1.7,4+s[i+3]*44,1,col+'66');}
+  else{for(let r=0;r<4;r++){const w=44-r*9+s[r]*5;R(sx+4,sy+3+r*6,w,4,col+(r===3?'ff':'aa'));R(sx+4+w+2,sy+3+r*6,2,4,col);}}
   if(d.active){const yy=sy+((T*40)%sh);R(sx,yy,sw,1.5,col+'bb');}
   ctx.restore();
   const glow=Math.max(d.flash,d.active?.6+.3*Math.sin(T*10):0,d.alert?.5+.4*Math.sin(T*6):0);
@@ -391,7 +391,7 @@ function drawDesk(d){
   ctx.fillStyle=bc;ctx.beginPath();ctx.arc(x+82,y-2,7,0,6.283);ctx.fill();
   txt(d.total>99?'99+':String(d.total),x+82,y-0.3,d.total>99?5:6.5,'#0a0f1f','center',700);
   txt(d.name,x+44,y+81,7,d.col,'center',700);
-  const top=d.items.slice().sort((a,b)=>b.n-a.n)[0];txt(top.l+' '+top.n,x+44,y+90,6,'#7c91b3');
+  const top=d.items.slice().sort((a,b)=>b.n-a.n)[0];txt(d.sub?d.sub():top.l+' '+top.n,x+44,y+90,6,'#7c91b3');
 }
 function drawRocket(){
   const x=RK.x,y=RK.y+rocket.y,b=RK.y;
@@ -523,7 +523,11 @@ const TPL=[
  ()=>{const d=fmtD(),s=sname();return{desk:'slot',item:'unconf',inc:1,short:'有人沒確認',say:d+' 有人還沒點確認，我去看看嗎？',text:d+' '+pickA(SVC)+'：'+s+' 還沒點確認',date:d};},
  ()=>{const n=2+(Math.random()*4|0);return{desk:'slot',item:'noaccept',inc:n,short:'有時段沒驗收',say:'昨天有 '+n+' 個時段做完了，還沒驗收',text:n+' 個時段做完還沒驗收'};},
  ()=>({desk:'slot',item:'nostart',inc:1,short:'時段沒點開始',say:'有個時段過了開工時間，人員還沒點開始',text:'有時段過了開工時間還沒點「開始」'}),
- ()=>({desk:'book',item:'unopened',inc:1,short:'預約沒開單',say:'客戶下了預約單，我們還沒開單喔',text:'客戶預約單還沒開'}),
+ ()=>({desk:'order',item:'unopened',inc:1,short:'預約沒開單',say:'客戶下了預約單，我們還沒開單喔',text:'客戶預約單還沒開'}),
+ ()=>{item('recruit','wait').n;const k=item('recruit','wait').n+1;return{desk:'recruit',item:'wait',inc:1,short:k>=2?'可以開課了':'再1位就開課',say:k>=2?'面試完成的新人有 '+k+' 位了，可以開 8 小時訓練課囉':'面試完成的新人只有 '+k+' 位，再 1 位就能開訓練課',text:k>=2?'面試完成 '+k+' 位，可以開訓練課':'面試完成 '+k+' 位，還差 '+(2-k)+' 位才能開課'};},
+ ()=>{const n=2+(Math.random()*2|0);return{desk:'recruit',item:'trial',inc:n,short:'新人待配班',say:n+' 位新人上完 8 小時課了，還沒安排第一班',text:n+' 位新人上完課，還沒安排配班出勤'};},
+ ()=>({desk:'recruit',item:'trial',inc:0,short:'新人試跑停滯',say:'有位新人配了 2 班後，10 天沒再排班了',text:'新人配班試跑 10 天沒有進度'}),
+ ()=>({desk:'recruit',item:'ready',inc:1,short:'可開放開班',say:'有新人已配滿 4 班，可以開放自己開班了',text:'新人配滿班數，可開放自己開班'}),
  ()=>({desk:'quote',item:'stale',inc:1,short:'報價沒動靜',say:'督導建的報價單 2 天了，行政沒回應',text:'督導建立報價單後，行政還沒跟進'}),
  ()=>{const d=fmtD(),n=2+(Math.random()*3|0);return{desk:'shift',item:'need',inc:n,short:d+' 缺人',say:d+' 有 '+n+' 個出班需求還沒配到人，要我爬嗎？',text:d+' 有 '+n+' 個出班需求還沒配到人',date:d};},
  ()=>{const n=2+(Math.random()*3|0);return{desk:'regular',item:'expiring',inc:n,short:'定期單到期',say:'有 '+n+' 張定期單 7 天內到期',text:n+' 張定期單 7 天內到期'};},
@@ -552,6 +556,7 @@ $('#alerts').addEventListener('click',e=>{
 });
 
 /* ================= 假資料列（爬到的東西） ================= */
+const rname=()=>pickA(SUR)+'○'+pickA(GIV);
 const oid=()=>5630+(Math.random()*33|0),tid=()=>14700+(Math.random()*65|0),cl=()=>pickA(CLIENT),slotT=()=>pickA(['09:00~12:00','13:30~15:30','14:00~16:00','08:00~17:00']);
 function genRows(dk,ik,date){
   const n=Math.min(item(dk,ik).n,6),rows=[],d=()=>date||fmtD();
@@ -570,8 +575,12 @@ function genRows(dk,ik,date){
       case'shift/unassigned':r={t:'#'+oid()+' 未完成派班',s:'任務時段還沒填入人員'};break;
       case'quote/quoting':r={t:'報價 #'+tid()+' '+cl(),s:'督導 '+sname()+' 建立，估價中'};break;
       case'quote/stale':r={t:'報價 #'+tid()+' '+cl(),s:'督導 '+sname()+' 建立後 '+(2+(Math.random()*4|0))+' 天，行政沒有回應'};break;
-      case'book/nottask':r={t:'#'+oid()+' '+cl(),s:'訂單已建立，任務還沒建立'};break;
-      case'book/unopened':r={t:cl()+' 預約 '+d()+' '+pickA(SVC),s:'客戶預約，尚未開單'};break;
+      case'order/nottask':r={t:'#'+oid()+' '+cl(),s:'訂單已建立，任務還沒建立'};break;
+      case'order/unopened':r={t:cl()+' 預約 '+d()+' '+pickA(SVC),s:'客戶預約，尚未開單'};break;
+      case'recruit/wait':r={t:rname()+' 面試完成',s:'面試後 '+(1+(Math.random()*9|0))+' 天，等累積 2 位以上才開訓練課'};break;
+      case'recruit/training':r={t:rname()+' 教育訓練中',s:'已上 '+(Math.random()*8|0)+'／8 小時，預計 '+d()+' 結訓'};break;
+      case'recruit/trial':r={t:rname()+' 配班試跑中',s:'已配 '+(1+(Math.random()*3|0))+'／4 班，跟 '+sname()+' 的班'};break;
+      case'recruit/ready':r={t:rname()+' 已配滿班數',s:'配了 4 班，可開放自己開班、等著被配班'};break;
       case'regular/expiring':r={t:'定期單 #'+oid()+' '+cl(),s:'剩 '+(1+(Math.random()*13|0))+' 天到期'};break;
       default:r={t:'定期單 #'+oid()+' '+cl(),s:'合約已到期，待續約'};
     }
@@ -591,10 +600,10 @@ function startCrawl(q){
   spider.focus=null;spider.sleep=0;spider.evt=null;spider.hubOn=true;setMode('run');setMood('爬資料中');
   say('我去翻 '+[...new Set(list.map(x=>deskOf(x.desk).name))].join('、')+'！',3);
   list.forEach((x,idx)=>{
-    const d=deskOf(x.desk),l=spider.legs[d.i],rows=genRows(x.desk,x.item,q.date);
+    const d=deskOf(x.desk),l=spider.legs[d.i],rows=x.item==='*'?d.items.flatMap(i=>genRows(x.desk,i.k,q.date).slice(0,2)):genRows(x.desk,x.item,q.date);
     d.active=true;l.job={desk:d.i,p:{x:d.mx,y:d.my},state:'reach',queue:rows.slice().reverse(),timer:0,pend:rows.length};l.touched=false;
     crawl.jobs.push(l.job);crawl.total+=rows.length;
-    log(d.k,'['+d.name+'] 爬爬伸腿過去翻「'+item(x.desk,x.item).l+'」');
+    log(d.k,'['+d.name+'] 爬爬伸腿過去翻「'+(x.item==='*'?'各階段進度':item(x.desk,x.item).l)+'」');
   });
   if(!crawl.total)endCrawl();
 }
@@ -614,7 +623,7 @@ function endCrawl(){
   const c=crawl;crawl=null;spider.hubOn=false;setMode('idle');spider.happy=2;
   const needs=c.got;
   const head=$('#resHead');if(head)head.textContent='爬完了：'+(c.q.label||'')+'（共 '+c.got+' 筆'+(c.total>=6?'，只列前幾筆':'')+'）';
-  say(needs?'爬完了，找到 '+needs+' 筆':'這邊沒有東西，很乾淨',4);setMood('閒晃中');
+  const gl=item('recruit','ready').n;say(needs?'爬完了，找到 '+needs+' 筆'+(c.q.item==='need'&&gl?'；增員桌有 '+gl+' 位新人配滿班，可優先聯絡':''):'這邊沒有東西，很乾淨',4);setMood('閒晃中');
   log('hit','[爬爬] '+(c.q.label||'')+' → '+needs+' 筆');S.tick='爬完：'+(c.q.label||'')+' '+needs+' 筆';
 }
 function addRow(r){
@@ -682,7 +691,9 @@ const EV=[
  ()=>({d:2,msg:'[班表桌] '+sname()+' 開了 '+fmtD()+' 的待命時段',fx:()=>{item('shift','standby').n++;}}),
  ()=>({d:1,msg:'[時段桌] '+sname()+' 已確認 '+fmtD()+' 的時段',fx:()=>{const i=item('slot','unconf');i.n=Math.max(0,i.n-1);}}),
  ()=>({d:0,msg:'[訂單桌] 訂單 #'+oid()+' 客戶完成付款',fx:()=>{const i=item('order','pay');i.n=Math.max(0,i.n-1);}}),
- ()=>({d:4,msg:'[預約桌] 官網新增一筆預約諮詢',fx:()=>{}}),
+ ()=>({d:0,msg:'[訂單桌] 官網新增一筆預約諮詢',fx:()=>{item('order','unopened').n++;}}),
+ ()=>({d:4,msg:'[增員桌] '+rname()+' 面試完成，進入等開課名單',fx:()=>{item('recruit','wait').n++;}}),
+ ()=>({d:4,msg:'[增員桌] '+rname()+' 完成第 '+(1+(Math.random()*3|0))+' 個試跑班',fx:()=>{}}),
  ()=>({d:3,msg:'[報價桌] 督導建立了新報價',fx:()=>{item('quote','quoting').n++;}}),
  ()=>({d:5,msg:'[定期單桌] 一張定期單完成續約',fx:()=>{const i=item('regular','expiring');i.n=Math.max(0,i.n-1);}}),
 ];
@@ -704,7 +715,7 @@ function idlePacket(l,p,i){
 
 /* ================= 指令 ================= */
 const KW=[[/出班需求|配班|派班|缺人/,'shift','need','出班需求'],[/未確認|沒確認|確認/,'slot','unconf','人員未確認'],[/沒開始|開始/,'slot','nostart','沒點開始'],[/沒結束|結束/,'slot','noend','沒點結束'],[/驗收/,'slot','noaccept','沒驗收'],
- [/報價|估價|督導/,'quote','stale','報價沒動靜'],[/預約|開單|沒開/,'book','unopened','預約沒開單'],[/任務未建立|未建立/,'book','nottask','任務未建立'],[/定期|到期|續約/,'regular','expiring','定期單即將到期'],
+ [/增員|新人|面試|面談|教育訓練|訓練|開課|上線/,'recruit','*','增員進度'],[/報價|估價|督導/,'quote','stale','報價沒動靜'],[/預約|開單|沒開/,'order','unopened','預約沒開單'],[/任務未建立|未建立/,'order','nottask','任務未建立'],[/定期|到期|續約/,'regular','expiring','定期單即將到期'],
  [/付款/,'order','pay','需付款'],[/不匹配|金額/,'order','mismatch','金額不匹配'],[/待命|開班/,'shift','standby','待命時段'],[/訂單/,'order','pending','待處理訂單']];
 function runCommand(q){
   q=q.trim();if(!q)return;
@@ -717,7 +728,7 @@ function runCommand(q){
 }
 $('#qgo').onclick=()=>{runCommand($('#q').value);$('#q').value='';};
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter'){runCommand($('#q').value);$('#q').value='';}});
-const CH=['爬 10/29 出班需求','爬 未確認','爬 沒驗收','爬 預約沒開單','爬 報價沒動靜','爬 定期單到期','爬 金額不匹配'];
+const CH=['爬 10/29 出班需求','爬 未確認','爬 沒驗收','爬 預約沒開單','爬 新人上線','爬 報價沒動靜','爬 定期單到期','爬 金額不匹配'];
 $('#chips').innerHTML=CH.map(c=>`<button data-q="${c}">${c.replace('爬 ','')}</button>`).join('');
 $('#chips').onclick=e=>{const b=e.target.closest('button');if(b)runCommand(b.dataset.q.replace('爬 ',''));};
 function showTab(t){[...$('#tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='cand'&&cands.length)renderCands();}
@@ -729,8 +740,8 @@ endCrawl=function(){const c=crawl;if(c&&c.dispatch){crawl=null;spider.hubOn=fals
 /* ================= UI ================= */
 function log(cls,html){
   const t=new Date().toTimeString().slice(0,8);logs.push({cls,t,html});if(logs.length>7)logs.shift();
-  const colr={order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',book:'#ff8ad8',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'}[cls]||'#7c91b3';
-  $('#log').innerHTML=logs.map(l=>`<div style="color:${{order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',book:'#ff8ad8',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'}[l.cls]||'#7c91b3'}"><time>${l.t}</time>${esc(l.html)}</div>`).join('');
+  const colr={order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',recruit:'#b794ff',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'}[cls]||'#7c91b3';
+  $('#log').innerHTML=logs.map(l=>`<div style="color:${{order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',recruit:'#b794ff',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'}[l.cls]||'#7c91b3'}"><time>${l.t}</time>${esc(l.html)}</div>`).join('');
 }
 function bump(id){const k=$('#'+id);k.classList.remove('bump');void k.offsetWidth;k.classList.add('bump');}
 function kpis(){$('#mbadge').textContent=pending().length||'';$('#k1').textContent=busy();$('#k2').textContent=totalAll();$('#k3').textContent=pending().length;$('#k4').textContent=S.resolved;}
