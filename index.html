@@ -61,7 +61,7 @@ button.sm{font-size:12px;padding:3px 9px}
 @keyframes rin{from{background:#1b2a4a;transform:translateX(8px)}}
 .row span{display:block;color:var(--mu);font-size:11.5px}.row .bt{margin-top:5px;display:flex;gap:6px;flex-wrap:wrap}
 .cand{padding:9px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:7px;font-size:12.5px;background:#0b1326}
-.cand.next{border-color:var(--gold);background:#231f0e}.cand.no{opacity:.4}.cand.yes{border-color:var(--ok);background:#0e2a1d}
+.cand.next{border-color:var(--gold);background:#231f0e}.cand.no,.cand.closed{opacity:.4}.cand.yes{border-color:var(--ok);background:#0e2a1d}
 .cand b{font-size:13.5px}.cand .sc{float:right;color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums}
 .tg{display:inline-block;font-size:10.5px;padding:0 6px;border-radius:4px;margin-left:6px;font-weight:600;color:#071018}
 .tg.open{background:var(--ok)}.tg.call{background:var(--gold)}
@@ -85,7 +85,7 @@ button.sm{font-size:12px;padding:3px 9px}
   .mtabs button{flex:1;padding:9px 0}.mtabs b{color:var(--gold);margin-left:4px}
   #pa,#pb{order:3}
   main[data-m="a"] #pb{display:none}main[data-m="b"] #pa{display:none}
-  .stage{aspect-ratio:376/352}
+  .stage{aspect-ratio:332/352}
   #msg{display:block}.console,.hud{display:none}
   button.sm{padding:7px 12px;font-size:13px}.chips button{padding:5px 11px;font-size:12.5px}.cmd input{font-size:16px}
   #res,.alerts{max-height:none}
@@ -166,17 +166,17 @@ const sname=()=>pickA(staff).name;
 
 /* ================= 六張桌子與累積的東西 ================= */
 const DESKS=[
- {k:'order',name:'訂單桌',col:'#ff6b6b',x:40,y:150,items:[{k:'pending',l:'待處理',n:8},{k:'pay',l:'需付款',n:33},{k:'mismatch',l:'金額不匹配',n:312},{k:'nottask',l:'任務未建立',n:3},{k:'unopened',l:'預約沒開單',n:2}]},
- {k:'slot',name:'時段桌',col:'#5aa9ff',x:150,y:150,items:[{k:'unconf',l:'人員未確認',n:1},{k:'nostart',l:'沒點開始',n:3},{k:'noend',l:'沒點結束',n:2},{k:'noaccept',l:'沒驗收',n:30}]},
- {k:'shift',name:'班表桌',col:'#5ef2a4',x:260,y:150,items:[{k:'need',l:'出班需求',n:6},{k:'standby',l:'待命時段',n:18},{k:'unassigned',l:'未完成派班',n:1}]},
- {k:'quote',name:'報價桌',col:'#ffb35e',x:40,y:255,items:[{k:'quoting',l:'估價中',n:5},{k:'stale',l:'報價沒動靜',n:2}]},
+ {k:'order',name:'訂單桌',col:'#ff6b6b',x:40,y:150,items:[{k:'pending',l:'待處理',n:3},{k:'pay',l:'需付款',n:4},{k:'mismatch',l:'金額不匹配',n:2},{k:'nottask',l:'任務未建立',n:1},{k:'unopened',l:'預約沒開單',n:2}]},
+ {k:'slot',name:'時段桌',col:'#5aa9ff',x:150,y:150,items:[{k:'unconf',l:'人員未確認',n:2},{k:'nostart',l:'沒點開始',n:1},{k:'noend',l:'沒點結束',n:1},{k:'noaccept',l:'沒驗收',n:4}]},
+ {k:'shift',name:'班表桌',col:'#5ef2a4',x:260,y:150,items:[{k:'need',l:'出班需求',n:3},{k:'standby',l:'待命時段',n:8},{k:'unassigned',l:'未完成派班',n:1}]},
+ {k:'quote',name:'報價桌',col:'#ffb35e',x:40,y:255,items:[{k:'quoting',l:'估價中',n:3},{k:'stale',l:'報價沒動靜',n:2}]},
  {k:'recruit',name:'增員桌',col:'#b794ff',x:150,y:255,sub:()=>'等開課 '+item('recruit','wait').n+'/2 人',items:[{k:'wait',l:'面試後等開課',n:1},{k:'training',l:'8 小時課程中',n:2},{k:'trial',l:'配班試跑中',n:3},{k:'ready',l:'可自己開班',n:2}]},
- {k:'regular',name:'定期單桌',col:'#7fe0d6',x:260,y:255,items:[{k:'expiring',l:'即將到期',n:15},{k:'renew',l:'待續約',n:4}]},
+ {k:'regular',name:'定期單桌',col:'#7fe0d6',x:260,y:255,items:[{k:'expiring',l:'即將到期',n:4},{k:'renew',l:'待續約',n:2}]},
 ];
 DESKS.forEach((d,i)=>{d.i=i;d.series=Array.from({length:24},()=>Math.random());d.flash=0;d.active=false;d.done=false;d.xm=d.x;d.ym=d.y;d.mx=d.x+44;d.my=d.y+17;d.tick=Math.random();d.load=0;d.disp=0;});
 const item=(dk,ik)=>DESKS.find(d=>d.k===dk).items.find(i=>i.k===ik);
 const deskOf=k=>DESKS.find(d=>d.k===k);
-function recalc(){DESKS.forEach(d=>{d.load=clamp(d.items.reduce((a,i)=>a+Math.sqrt(i.n),0)/(d.k==='order'?18:12),0,1);d.total=d.items.reduce((a,i)=>a+i.n,0);});}
+function recalc(){DESKS.forEach(d=>{d.load=clamp(d.items.reduce((a,i)=>a+Math.sqrt(i.n),0)/(d.k==='order'?10:8),0,1);d.total=d.items.reduce((a,i)=>a+i.n,0);});}
 const busy=()=>Math.round(DESKS.reduce((a,d)=>a+d.load,0)/6*100);
 const totalAll=()=>DESKS.reduce((a,d)=>a+d.total,0);
 recalc();
@@ -192,7 +192,7 @@ const S={mode:'idle',busyHist:Array.from({length:70},()=>.5),tick:'',resolved:0,
 const sparks=[],packets=[],bubbles=[],papers=[];
 let logs=[];
 function applyMode(){
-  MOB=mq.matches;VIEW=MOB?{x:36,y:0,w:376,h:352}:{x:0,y:0,w:LW,h:360};
+  MOB=mq.matches;VIEW=MOB?{x:28,y:0,w:332,h:352}:{x:0,y:0,w:LW,h:360};
   if(MOB){NEST.x=384;NEST.y=166;RK.x=384;RK.y=262;}else{NEST.x=552;NEST.y=168;RK.x=548;RK.y=262;}
   DESKS.forEach(d=>{d.x=MOB?d.xm:[20,200,380][d.i%3];d.y=MOB?d.ym:[142,266][d.i/3|0];d.mx=d.x+44;d.my=d.y+17;if(typeof workers!=='undefined'){const w=workers[d.i];w.hx=d.x+44;w.hy=d.y+64;if(!w.walk){w.x=w.hx;w.y=w.hy;}}});
   if(typeof bot!=='undefined')bot.x=MOB?60:540;
@@ -272,7 +272,7 @@ const workers=DESKS.map(d=>new Worker(d));
 const spider={x:250,y:112,wp:{x:250,y:112},wt:3,legs:[],hub:{x:194,y:218},evt:null,pulse:0,say:null,sayT:0,sticky:false,focus:null,sleep:0,blink:0,nb:2,mood:'巡檢中',surprise:0,happy:0,hubOn:false};
 for(let i=0;i<8;i++)spider.legs.push({a:i/8*6.283+.4,l1:68,l2:76,fx:250,fy:112,tx:250,ty:112,hold:Math.random()*2,touched:false,side:i%2?1:-1,col:i%2?'#ff9fe0':'#9fd8ff',job:null,kx:0,ky:0,tgt:null});
 const POI=[];
-function buildPOI(){return[...DESKS.map(d=>({x:d.mx,y:d.my,d:d.i,col:d.col})),...(MOB?[{x:RK.x,y:RK.y,col:'#ffe69a',n:'rocket'}]:[]),...(MOB?[]:[{x:592,y:232,col:'#7fd6ff',n:'rack'}]),{x:250,y:100,col:'#5aa9ff',n:'screen'}];}
+function buildPOI(){return[...DESKS.map(d=>({x:d.mx,y:d.my,d:d.i,col:d.col})),...(MOB?[]:[{x:592,y:232,col:'#7fd6ff',n:'rack'}]),{x:250,y:100,col:'#5aa9ff',n:'screen'}];}
 const IDLE_WP=[[250,120],[194,215],[330,200],[120,200],[400,190],[260,225],[190,125]];
 function setMood(m){if(spider.mood!==m){spider.mood=m;$('#mood').textContent='爬爬：'+m;}}
 function say(lines,ttl,sticky){spider.say=typeof lines==='string'?wrap(lines,15):lines;spider.sayT=ttl||4;spider.sticky=!!sticky;}
@@ -340,13 +340,13 @@ function rocketUpdate(dt){
   if(rocket.fly>0){rocket.fly-=dt;rocket.vy-=dt*120;rocket.y+=rocket.vy*dt;sparks.push({x:RK.x,y:RK.y+rocket.y+14,vx:rr(-8,8),vy:rr(20,60),life:.7,col:'#ffb35e'});if(rocket.fly<=0){rocket.y=-230;rocket.vy=0;rocket.back=1;}}
   else if(rocket.back){rocket.y+=Math.min(60,(0-rocket.y)*1.5+8)*dt*1.3;if(rocket.y>=-.5){rocket.y=0;rocket.back=0;}}
 }
-function launch(){if(!MOB||rocket.fly>0||rocket.back)return;rocket.fly=1.8;rocket.vy=-20;rocket.y=0;}
+function launch(){return;rocket.fly=1.8;rocket.vy=-20;rocket.y=0;}
 
 /* ================= 繪圖：場景 ================= */
 function drawScene(){
   R(0,0,LW,LH,'#0a0f1f');R(0,0,LW,124,'#0e1730');R(0,124,LW,3,'#18274a');
   for(let x=8;x<LW;x+=24)for(let y=140;y<LH;y+=24)R(x,y,1,1,'#16223f');
-  ctx.save();if(!MOB)ctx.translate(-80,0);R(98,12,306,100,'#18233f');R(101,15,300,94,'#070d1c');drawWallScreen();ctx.restore();
+  ctx.save();ctx.translate(MOB?-57:-80,0);R(98,12,306,100,'#18233f');R(101,15,300,94,'#070d1c');drawWallScreen();ctx.restore();
   drawNotes();
   for(const [px,py] of [[14,132],[14,318],[620,132],[612,318]])plant(px,py);
   R(62,362,150,20,'#1b2748');R(62,355,150,9,'#243257');R(62,362,6,20,'#243257');R(206,362,6,20,'#243257');
@@ -401,7 +401,7 @@ function drawDesk(d){
   }
 }
 function drawRocket(){
-  if(!MOB)return;
+  return;
   const x=RK.x,y=RK.y+rocket.y,b=RK.y;
   R(x-14,b+12,28,5,'#18233f');R(x-10,b+17,20,3,'#0d1428');
   R(x-3,y-10,6,24,'#e8f0ff');R(x-2,y-14,4,4,'#e8f0ff');R(x-1,y-17,2,3,'#ff6b6b');R(x-6,y+8,3,7,'#ff6b6b');R(x+3,y+8,3,7,'#ff6b6b');R(x-1,y-4,2,3,'#4fd8ff');
@@ -431,7 +431,7 @@ function drawNotes(){
   });
 }
 function drawWallScreen(){
-  TXO=MOB?0:-80;try{drawWallScreen0();}finally{TXO=0;}
+  TXO=MOB?-57:-80;try{drawWallScreen0();}finally{TXO=0;}
 }
 function drawWallScreen0(){
   const b=busy(),col=b>66?'#ff6b81':b>40?'#ffb35e':'#5ef2a4';
@@ -439,7 +439,7 @@ function drawWallScreen0(){
   // 儀表
   ctx.lineWidth=5;ctx.strokeStyle='#16294a';ctx.beginPath();ctx.arc(142,76,24,Math.PI*.8,Math.PI*2.2);ctx.stroke();
   ctx.strokeStyle=col;ctx.beginPath();ctx.arc(142,76,24,Math.PI*.8,Math.PI*(.8+1.4*b/100));ctx.stroke();
-  txt(String(b),142,81,14,col,'center',700);txt(b>66?'很忙':b>40?'有點忙':'輕鬆',142,100,6.5,'#9fb4dc');
+  txt(String(b),142,78,14,col,'center',700);txt(b>66?'很忙':b>40?'有點忙':'輕鬆',142,91,6.5,'#9fb4dc');
   // 曲線
   ctx.save();ctx.beginPath();ctx.rect(176,34,220,60);ctx.clip();
   ctx.strokeStyle='#16294a';ctx.lineWidth=.6;for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(176,38+i*16);ctx.lineTo(396,38+i*16);ctx.stroke();}
@@ -618,6 +618,12 @@ function startCrawl(q){
   });
   if(!crawl.total)endCrawl();
 }
+let resMeta=null;
+function setResHead(){
+  const h=$('#resHead');if(!h||!resMeta)return;
+  const rows=$('#res').querySelectorAll('.row').length,tot=resMeta.desk&&resMeta.item&&resMeta.item!=='*'?item(resMeta.desk,resMeta.item).n:null;
+  h.textContent=tot===0?'這一類已經沒有待處理的了':tot===null?'爬完了：'+resMeta.label+'（共 '+rows+' 筆）':rows===0?'列出的這幾筆處理完了，這類還有 '+tot+' 筆，可以再爬一次':'爬完了：'+resMeta.label+'（共 '+tot+' 筆'+(rows<tot?'，列出前 '+rows+' 筆':'')+'）';
+}
 function crawlUpdate(dt){
   if(!crawl)return;
   spider.legs.forEach(l=>{
@@ -633,7 +639,7 @@ function jobDone(j,l){const d=DESKS[j.desk];d.active=false;l.job=null;l.hold=0;c
 function endCrawl(){
   const c=crawl;crawl=null;spider.hubOn=false;setMode('idle');spider.happy=2;
   const needs=c.got;
-  const head=$('#resHead');if(head)head.textContent='爬完了：'+(c.q.label||'')+'（共 '+c.got+' 筆'+(c.total>=6?'，只列前幾筆':'')+'）';
+  resMeta={desk:c.q.desk,item:c.q.item,label:c.q.label||''};setResHead();
   const gl=item('recruit','ready').n;say(needs?'爬完了，找到 '+needs+' 筆'+(c.q.item==='need'&&gl?'；增員桌有 '+gl+' 位新人配滿班，可優先聯絡':''):'這邊沒有東西，很乾淨',4);setMood('巡檢中');
   log('hit','[爬爬] '+(c.q.label||'')+' → '+needs+' 筆');S.tick='爬完：'+(c.q.label||'')+' '+needs+' 筆';
 }
@@ -651,13 +657,14 @@ function addRow(r){
   el.appendChild(bt);box.appendChild(el);
 }
 function resolveRow(r,el){
-  const it=item(r.dk,r.ik);it.n=Math.max(0,it.n-1);recalc();el.remove();S.resolved++;if(srcAlert&&srcAlert.state==='new'&&srcAlert.desk===r.dk&&--srcAlert.left<=0){srcAlert.state='done';renderAlerts();}launch();spark(MOB?RK.x:469,MOB?RK.y-8:97,12,'#ffe69a');
+  const it=item(r.dk,r.ik);it.n=Math.max(0,it.n-1);recalc();el.remove();setResHead();S.resolved++;if(srcAlert&&srcAlert.state==='new'&&srcAlert.desk===r.dk&&--srcAlert.left<=0){srcAlert.state='done';renderAlerts();}launch();spark(MOB?194:469,97,12,'#ffe69a');
   spider.happy=1.5;say('+1 解決！',2);bump('k4');kpis();log('hit','[已處理] '+deskOf(r.dk).name+'：'+it.l+' −1');
 }
 
 /* ================= 配班建議 ================= */
-let cands=[],curNeed=null;
+let cands=[],curNeed=null,curRow=null;
 function startDispatch(need,rowEl){
+  curRow=rowEl||null;
   if(crawl){say('等我爬完這個',2);return;}
   setM('b');curNeed=need;crawl={q:{label:'配班：'+need.date+' '+DIST[need.dist][0]},jobs:[],total:0,got:0,done:0,dispatch:true};
   stopPatrol();spider.focus=null;spider.sleep=0;spider.evt=null;spider.hubOn=true;setMode('run');setMood('幫忙配班中');
@@ -687,13 +694,14 @@ function buildCands(n){
 }
 function renderCands(){
   const n=curNeed,box=$('#res');
-  const nextIdx=cands.findIndex(c=>!c.state);
-  const yes=cands.filter(c=>c.state==='yes').length;
-  const head=`<div class="empty" style="color:var(--tx)"><b>${esc(n.date)} ${esc(n.slot)} · ${esc(DIST[n.dist][0])}</b><br>${n.svc==='不限'?'':esc(n.svc)+'　'+esc(n.client)+'　'}需要 ${n.n} 人（已排入 ${yes} 位）<br><span style="color:var(--mu)">從第一位開始聯絡（LINE@／電話）；無法出班就標記，改聯絡下一位。人員排進班表後，爬爬重新檢查，這個需求才會消失。</span></div>`;
+  const yes=cands.filter(c=>c.state==='yes').length,full=yes>=n.n;
+  const nextIdx=full?-1:cands.findIndex(c=>!c.state);
+  const head=`<div class="empty" style="color:var(--tx)"><b>${esc(n.date)} ${esc(n.slot)} · ${esc(DIST[n.dist][0])}</b><br>${n.svc==='不限'?'':esc(n.svc)+'　'+esc(n.client)+'　'}需要 ${n.n} 人（已排入 ${yes} 位）<br><span style="color:var(--mu)">${full?'✔ 這個需求已配滿。':'從第一位開始聯絡（LINE@／電話）；無法出班就標記，改聯絡下一位。人員排進班表後，爬爬重新檢查，這個需求才會消失。'}</span>${full?'<div class="bt" style="margin-top:8px"><button class="sm pri" data-x="clear">狀況排除</button></div>':''}</div>`;
   const stTxt={go:'⏳ 前往「班表」排班中，爬爬等你處理完…',yes:'✔ 已排入班表（爬爬重新檢查確認）',no:'✕ 無法出班'};
-  box.innerHTML=head+cands.map((c,i)=>`<div class="cand ${c.state||(i===nextIdx?'next':'')}"><span class="sc">${Math.round(c.score)}</span><b>${i+1}. ${esc(c.s.name)}</b><i class="tg ${c.open?'open':'call'}">${c.open?'有開班':'可聯絡'}</i><span>${esc(c.why)}</span>${c.state?`<span style="color:var(--tx)">${stTxt[c.state]}</span>`:`<div class="bt"><button class="sm pri" data-c="go" data-i="${i}">前往排班</button><button class="sm" data-c="no" data-i="${i}">無法出班</button></div>`}</div>`).join('');
+  box.innerHTML=head+cands.filter(c=>!full||c.state==='yes').map((c,i)=>`<div class="cand ${c.state||(full?'closed':i===nextIdx?'next':'')}"><span class="sc">${Math.round(c.score)}</span><b>${i+1}. ${esc(c.s.name)}</b><i class="tg ${c.open?'open':'call'}">${c.open?'有開班':'可聯絡'}</i><span>${esc(c.why)}</span>${c.state?`<span style="color:var(--tx)">${stTxt[c.state]}</span>`:full?`<span style="color:var(--mu)">需求已配滿，不需聯絡</span>`:`<div class="bt"><button class="sm pri" data-c="go" data-i="${i}">前往排班</button><button class="sm" data-c="no" data-i="${i}">無法出班</button></div>`}</div>`).join('');
 }
 $('#res').addEventListener('click',e=>{
+  if(e.target.closest('button[data-x="clear"]')){cands=[];curNeed=null;$('#res').innerHTML='<div class="empty">狀況已排除。</div>';say('好，這個狀況排除了',2.5);return;}
   const b=e.target.closest('button[data-c]');if(!b)return;const arr=cands,c=arr[+b.dataset.i];c.state=b.dataset.c;
   if(c.state==='no'){log('hit','[配班] '+c.s.name+' 無法出班，改聯絡下一位');say('好，換下一位',2.5);renderCands();return;}
   log('hit','[配班] 前往班表排入 '+c.s.name+'，爬爬等你處理完再檢查');say('我等你排好，再回頭檢查',3);renderCands();
@@ -701,7 +709,11 @@ $('#res').addEventListener('click',e=>{
     if(cands!==arr||c.state!=='go')return;
     c.state='yes';S.resolved++;bump('k4');log('hit','[配班] 重新檢查：'+c.s.name+' 已排入時段');
     const yes=arr.filter(x=>x.state==='yes').length;
-    if(yes>=curNeed.n){const it=item('shift','need');it.n=Math.max(0,it.n-1);recalc();launch();spark(MOB?RK.x:469,MOB?RK.y-8:97,24,'#ffe69a');spider.happy=3;say('配好了！',3);log('hit','[完成] 需求已配滿');if(srcAlert&&srcAlert.desk==='shift'&&srcAlert.state==='new'){srcAlert.state='done';renderAlerts();}}
+    if(yes>=curNeed.n){const it=item('shift','need');it.n=Math.max(0,it.n-1);recalc();launch();spark(MOB?194:469,97,24,'#ffe69a');spider.happy=3;say('配好了！',3);log('hit','[完成] 需求已配滿');if(curRow&&curRow.isConnected)curRow.remove();
+      const al=(srcAlert&&srcAlert.desk==='shift'&&srcAlert.state==='new')?srcAlert:(alerts.find(x=>x.state==='new'&&x.desk==='shift'&&x.date===curNeed.date)||alerts.find(x=>x.state==='new'&&x.desk==='shift'&&(x.item==='need'||x.item==='unassigned')));
+      if(al){if(al.item!=='need'){const ai=item('shift',al.item);ai.n=Math.max(0,ai.n-1);recalc();}
+        if(--al.left<=0)al.state='done';else if(al.item==='need'){al.text=al.date+' 有 '+al.left+' 個出班需求還沒配到人';al.short=al.date+' 缺人';}
+        renderAlerts();}}
     renderCands();kpis();
   },2600);
 });
