@@ -118,12 +118,12 @@ button.sm{font-size:12px;padding:3px 9px}
     <ul class="alerts" id="alerts"></ul>
     <button id="newAlert" style="width:100%">＋ 模擬新狀況進來</button>
     <div class="speed" id="spd"><button data-s="1" class="on">1×</button><button data-s="2">2×</button><button data-s="4">4×</button></div>
-    <p class="note">所有數字與人員皆為示意資料，不代表實際營運數據。</p>
+    <p class="note">怎麼看：桌上文件越高、員工越慌，代表事情越多；桌子右邊列出各項目的數量；點任一張桌子，爬爬就去爬它最多的那一項。</p>
   </section>
 
   <section class="center">
     <div class="stage" id="stage"><canvas id="cv"></canvas>
-      <div class="hud"><span class="chip" id="mode">待命</span><span class="chip" id="mood">爬爬：閒晃中</span></div>
+      <div class="hud"><span class="chip" id="mode">待命</span><span class="chip" id="mood">爬爬：巡檢中</span></div>
     </div>
     <div id="msg"></div>
     <div class="console" id="log"></div>
@@ -269,7 +269,7 @@ class Worker{
 const workers=DESKS.map(d=>new Worker(d));
 
 /* ================= 爬爬（資料蜘蛛） ================= */
-const spider={x:250,y:112,wp:{x:250,y:112},wt:3,legs:[],hub:{x:194,y:218},evt:null,pulse:0,say:null,sayT:0,sticky:false,focus:null,sleep:0,blink:0,nb:2,mood:'閒晃中',surprise:0,happy:0,hubOn:false};
+const spider={x:250,y:112,wp:{x:250,y:112},wt:3,legs:[],hub:{x:194,y:218},evt:null,pulse:0,say:null,sayT:0,sticky:false,focus:null,sleep:0,blink:0,nb:2,mood:'巡檢中',surprise:0,happy:0,hubOn:false};
 for(let i=0;i<8;i++)spider.legs.push({a:i/8*6.283+.4,l1:68,l2:76,fx:250,fy:112,tx:250,ty:112,hold:Math.random()*2,touched:false,side:i%2?1:-1,col:i%2?'#ff9fe0':'#9fd8ff',job:null,kx:0,ky:0,tgt:null});
 const POI=[];
 function buildPOI(){return[...DESKS.map(d=>({x:d.mx,y:d.my,d:d.i,col:d.col})),...(MOB?[{x:RK.x,y:RK.y,col:'#ffe69a',n:'rocket'}]:[]),...(MOB?[]:[{x:592,y:232,col:'#7fd6ff',n:'rack'}]),{x:250,y:100,col:'#5aa9ff',n:'screen'}];}
@@ -299,7 +299,7 @@ function spiderUpdate(dt){
   if(spider.sayT>0&&!spider.sticky){spider.sayT-=dt;if(spider.sayT<=0)spider.say=null;}
   if(run){spider.wp=spider.hub;}
   else if(spider.focus!==null){const p=POI[spider.focus];spider.wp={x:p.x+20,y:Math.min(p.y+52,226)};}
-  else if(spider.sleep>0){spider.sleep-=dt;spider.wp=NEST;if(spider.sleep<=0)setMood('閒晃中');}
+  else if(spider.sleep>0){spider.sleep-=dt;spider.wp=NEST;if(spider.sleep<=0)setMood('巡檢中');}
   else{
     spider.wt-=dt;
     if(spider.wt<=0){const w=pickA(IDLE_WP);spider.wp=w==='nest'?NEST:{x:w[0]+rr(-14,14),y:w[1]+rr(-10,10)};spider.wt=rr(4,8);}
@@ -525,7 +525,7 @@ cv.addEventListener('click',e=>{
 });
 
 /* ================= 狀況（爬爬想說的話） ================= */
-const alerts=[];let alertId=1;
+const alerts=[];let alertId=1,srcAlert=null;
 const pending=()=>alerts.filter(a=>a.state==='new');
 const fmtD=()=>{const d=new Date(Date.now()+(1+(Math.random()*4|0))*864e5);return (d.getMonth()+1)+'/'+d.getDate();};
 const TPL=[
@@ -544,8 +544,8 @@ const TPL=[
  ()=>({win:'供給',desk:'recruit',item:'trial',inc:0,short:'新人試跑停滯',say:'有位新人配了 2 班後，10 天沒再排班了',text:'新人配班試跑 10 天沒有進度'}),
  ()=>({win:'供給',desk:'recruit',item:'ready',inc:1,short:'可開放開班',say:'有新人已配滿 4 班，可以開放自己開班了',text:'新人配滿班數，可開放自己開班'}),
 ];
-function newAlert(){
-  const t=pickA(TPL)(),a=Object.assign({id:alertId++,state:'new',t0:Date.now()},t);
+function newAlert(t0){
+  const t=t0||pickA(TPL)(),a=Object.assign({id:alertId++,state:'new',t0:Date.now(),left:Math.max(1,t.inc)},t);
   const it=item(a.desk,a.item);it.n+=a.inc;recalc();
   alerts.push(a);const d=deskOf(a.desk);d.alert=true;d.flash=1;
   spider.sleep=0;spider.evt=null;spider.focus=d.i;spider.surprise=1;setMood('發現狀況！');
@@ -556,14 +556,14 @@ function dismissSay(){spider.say=null;spider.sticky=false;spider.focus=null;}
 function renderAlerts(){
   const L=pending();
   $('#alerts').innerHTML=L.slice().reverse().map(a=>{const d=deskOf(a.desk),m=Math.max(0,(Date.now()-a.t0)/6e4|0);
-    return `<li class="alert" style="--c:${d.col}"><b>${d.name}</b><small>${m<1?'剛剛':m+' 分鐘前'}</small><p>${a.win?`<span class="win">${a.win}</span>`:''}${esc(a.text)}</p><div class="bt"><button class="sm pri" data-a="crawl" data-id="${a.id}">爬一下</button><button class="sm" data-a="later" data-id="${a.id}">晚點</button></div></li>`;}).join('')||'<div class="empty">爬爬目前沒有要說的事。</div>';
+    return `<li class="alert" style="--c:${d.col}${a.later?';opacity:.65':''}"><b>${d.name}</b><small>${m<1?'剛剛':m+' 分鐘前'}</small><p>${a.win?`<span class="win">${a.win}</span>`:''}${esc(a.text)}</p><div class="bt"><button class="sm pri" data-a="crawl" data-id="${a.id}">看明細</button><button class="sm" data-a="later" data-id="${a.id}"${a.later?' disabled':''}>${a.later?'已排稍後處理':'稍後處理'}</button></div></li>`;}).join('')||'<div class="empty">爬爬目前沒有要說的事。</div>';
   $('#acount').textContent=L.length?L.length+' 則':'';
   DESKS.forEach(d=>d.alert=L.some(a=>a.desk===d.k));
 }
 $('#alerts').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const a=alerts.find(x=>x.id==b.dataset.id);if(!a)return;
-  if(b.dataset.a==='crawl'){a.state='asked';renderAlerts();kpis();dismissSay();startCrawl({desk:a.desk,item:a.item,date:a.date,label:a.text});}
-  else{a.state='later';renderAlerts();kpis();dismissSay();say('好，我晚點再提醒你',2.5);}
+  if(b.dataset.a==='crawl'){srcAlert=a;dismissSay();startCrawl({desk:a.desk,item:a.item,date:a.date,label:a.text});}
+  else{a.later=true;renderAlerts();dismissSay();say('好，先放著；它還是會掛在清單上',3);}
 });
 
 /* ================= 假資料列（爬到的東西） ================= */
@@ -608,7 +608,7 @@ function startCrawl(q){
   crawl={q,jobs:[],total:0,got:0,done:0};
   $('#res').innerHTML='';showTab('res');setM('b');
   const head=document.createElement('div');head.className='empty';head.id='resHead';head.textContent='爬爬正在爬：'+(q.label||'')+'…';$('#res').appendChild(head);
-  spider.focus=null;spider.sleep=0;spider.evt=null;spider.hubOn=true;setMode('run');setMood('爬資料中');
+  stopPatrol();spider.focus=null;spider.sleep=0;spider.evt=null;spider.hubOn=true;setMode('run');setMood('爬資料中');
   say('我去翻 '+[...new Set(list.map(x=>deskOf(x.desk).name))].join('、')+'！',3);
   list.forEach((x,idx)=>{
     const d=deskOf(x.desk),l=spider.legs[d.i],rows=x.item==='*'?d.items.flatMap(i=>genRows(x.desk,i.k,q.date).slice(0,2)):genRows(x.desk,x.item,q.date);
@@ -634,20 +634,24 @@ function endCrawl(){
   const c=crawl;crawl=null;spider.hubOn=false;setMode('idle');spider.happy=2;
   const needs=c.got;
   const head=$('#resHead');if(head)head.textContent='爬完了：'+(c.q.label||'')+'（共 '+c.got+' 筆'+(c.total>=6?'，只列前幾筆':'')+'）';
-  const gl=item('recruit','ready').n;say(needs?'爬完了，找到 '+needs+' 筆'+(c.q.item==='need'&&gl?'；增員桌有 '+gl+' 位新人配滿班，可優先聯絡':''):'這邊沒有東西，很乾淨',4);setMood('閒晃中');
+  const gl=item('recruit','ready').n;say(needs?'爬完了，找到 '+needs+' 筆'+(c.q.item==='need'&&gl?'；增員桌有 '+gl+' 位新人配滿班，可優先聯絡':''):'這邊沒有東西，很乾淨',4);setMood('巡檢中');
   log('hit','[爬爬] '+(c.q.label||'')+' → '+needs+' 筆');S.tick='爬完：'+(c.q.label||'')+' '+needs+' 筆';
 }
+const PAGE={order:'訂單',slot:'任務',shift:'班表',quote:'報價單',recruit:'增員',regular:'訂單'};
 function addRow(r){
   const box=$('#res');if(box.querySelectorAll('.row').length>=40)return;
   const el=document.createElement('div');el.className='row';el.style.setProperty('--c',r.col);
   el.innerHTML=`<b>${esc(r.t)}</b><span>${esc(r.s)}</span>`;
   const bt=document.createElement('div');bt.className='bt';
   if(r.need){const b=document.createElement('button');b.className='sm pri';b.textContent='幫我配班';b.onclick=()=>startDispatch(r.need,el);bt.appendChild(b);}
-  const ok=document.createElement('button');ok.className='sm';ok.textContent='標為已處理';ok.onclick=()=>resolveRow(r,el);bt.appendChild(ok);
+  const ok=document.createElement('button');ok.className='sm';ok.textContent='我來處理';
+  ok.onclick=()=>{ok.disabled=true;ok.textContent='爬爬等你處理…';const sp=el.querySelector('span');sp.textContent='（正式版會跳到「'+(PAGE[r.dk]||'')+'」頁的這一筆）處理完後，爬爬重新檢查到條件消失，才會從清單拿掉';
+    setTimeout(()=>{if(!el.isConnected)return;sp.textContent='爬爬重新檢查：這一筆已排除';setTimeout(()=>{if(el.isConnected)resolveRow(r,el);},900);},2600);};
+  bt.appendChild(ok);
   el.appendChild(bt);box.appendChild(el);
 }
 function resolveRow(r,el){
-  const it=item(r.dk,r.ik);it.n=Math.max(0,it.n-1);recalc();el.remove();S.resolved++;launch();spark(MOB?RK.x:536,MOB?RK.y-8:98,12,'#ffe69a');
+  const it=item(r.dk,r.ik);it.n=Math.max(0,it.n-1);recalc();el.remove();S.resolved++;if(srcAlert&&srcAlert.state==='new'&&srcAlert.desk===r.dk&&--srcAlert.left<=0){srcAlert.state='done';renderAlerts();}launch();spark(MOB?RK.x:536,MOB?RK.y-8:98,12,'#ffe69a');
   spider.happy=1.5;say('+1 解決！',2);bump('k4');kpis();log('hit','[已處理] '+deskOf(r.dk).name+'：'+it.l+' −1');
 }
 
@@ -656,7 +660,7 @@ let cands=[],curNeed=null;
 function startDispatch(need,rowEl){
   if(crawl){say('等我爬完這個',2);return;}
   setM('b');curNeed=need;crawl={q:{label:'配班：'+need.date+' '+DIST[need.dist][0]},jobs:[],total:0,got:0,done:0,dispatch:true};
-  spider.focus=null;spider.sleep=0;spider.evt=null;spider.hubOn=true;setMode('run');setMood('幫忙配班中');
+  stopPatrol();spider.focus=null;spider.sleep=0;spider.evt=null;spider.hubOn=true;setMode('run');setMood('幫忙配班中');
   say('配班！我去翻班表、時段、訂單',3);log('hit','[爬爬] 開始配班：'+need.date+' '+need.slot+' '+DIST[need.dist][0]+' '+(need.svc==='不限'?'':need.svc+' ')+'需 '+need.n+' 人');
   [2,1,0].forEach(i=>{
     const d=DESKS[i],l=spider.legs[i],rows=Array.from({length:6},()=>({t:'',s:'',col:d.col,dk:d.k}));
@@ -681,21 +685,25 @@ function buildCands(n){
   cands=[...cands.filter(c=>c.open).slice(0,4),...cands.filter(c=>!c.open).slice(0,2)].sort((a,b)=>b.score-a.score);
   renderCands();showTab('cand');
 }
-const rejects={};
 function renderCands(){
   const n=curNeed,box=$('#res');
   const nextIdx=cands.findIndex(c=>!c.state);
   const yes=cands.filter(c=>c.state==='yes').length;
-  const head=`<div class="empty" style="color:var(--tx)"><b>${esc(n.date)} ${esc(n.slot)} · ${esc(DIST[n.dist][0])}</b><br>${n.svc==='不限'?'':esc(n.svc)+'　'+esc(n.client)+'　'}需要 ${n.n} 人（已同意 ${yes} 位）<br><span style="color:var(--mu)">依序聯絡；爬爬看不到 LINE／電話，請在這裡點結果，拒絕只記錄在本頁。</span></div>`;
-  box.innerHTML=head+cands.map((c,i)=>`<div class="cand ${c.state||(i===nextIdx?'next':'')}"><span class="sc">${Math.round(c.score)}</span><b>${i+1}. ${esc(c.s.name)}</b><i class="tg ${c.open?'open':'call'}">${c.open?'有開班':'可聯絡'}</i>${rejects[c.s.id]?`<i class="tg" style="background:var(--bad)">本頁拒絕 ${rejects[c.s.id]}</i>`:''}<span>${esc(c.why)}</span>${c.state?`<span style="color:var(--tx)">${c.state==='yes'?'✔ 已口頭同意':'✕ 對方拒絕（已記錄）'}</span>`:`<div class="bt"><button class="sm pri" data-c="yes" data-i="${i}">已口頭同意</button><button class="sm" data-c="no" data-i="${i}">對方拒絕</button></div>`}</div>`).join('');
+  const head=`<div class="empty" style="color:var(--tx)"><b>${esc(n.date)} ${esc(n.slot)} · ${esc(DIST[n.dist][0])}</b><br>${n.svc==='不限'?'':esc(n.svc)+'　'+esc(n.client)+'　'}需要 ${n.n} 人（已排入 ${yes} 位）<br><span style="color:var(--mu)">從第一位開始聯絡（LINE@／電話）；無法出班就標記，改聯絡下一位。人員排進班表後，爬爬重新檢查，這個需求才會消失。</span></div>`;
+  const stTxt={go:'⏳ 前往「班表」排班中，爬爬等你處理完…',yes:'✔ 已排入班表（爬爬重新檢查確認）',no:'✕ 無法出班'};
+  box.innerHTML=head+cands.map((c,i)=>`<div class="cand ${c.state||(i===nextIdx?'next':'')}"><span class="sc">${Math.round(c.score)}</span><b>${i+1}. ${esc(c.s.name)}</b><i class="tg ${c.open?'open':'call'}">${c.open?'有開班':'可聯絡'}</i><span>${esc(c.why)}</span>${c.state?`<span style="color:var(--tx)">${stTxt[c.state]}</span>`:`<div class="bt"><button class="sm pri" data-c="go" data-i="${i}">前往排班</button><button class="sm" data-c="no" data-i="${i}">無法出班</button></div>`}</div>`).join('');
 }
 $('#res').addEventListener('click',e=>{
-  const b=e.target.closest('button[data-c]');if(!b)return;const c=cands[+b.dataset.i];c.state=b.dataset.c;
-  if(c.state==='no'){rejects[c.s.id]=(rejects[c.s.id]||0)+1;log('bad','[記錄] '+c.s.name+' 拒絕，改聯絡下一位（僅記在本頁）');spider.surprise=.8;say('沒關係，換下一位',2.5);}
-  else{log('hit','[配班] '+c.s.name+' 已口頭同意');S.resolved++;bump('k4');}
-  const yes=cands.filter(x=>x.state==='yes').length;
-  if(yes>=curNeed.n){const it=item('shift','need');it.n=Math.max(0,it.n-1);recalc();launch();spark(MOB?RK.x:536,MOB?RK.y-8:98,24,'#ffe69a');spider.happy=3;say('配好了！記得回後台填班表',4);log('hit','[完成] 需求已配滿，請到後台把人員填入時段');kpis();}
-  renderCands();kpis();
+  const b=e.target.closest('button[data-c]');if(!b)return;const arr=cands,c=arr[+b.dataset.i];c.state=b.dataset.c;
+  if(c.state==='no'){log('hit','[配班] '+c.s.name+' 無法出班，改聯絡下一位');say('好，換下一位',2.5);renderCands();return;}
+  log('hit','[配班] 前往班表排入 '+c.s.name+'，爬爬等你處理完再檢查');say('我等你排好，再回頭檢查',3);renderCands();
+  setTimeout(()=>{
+    if(cands!==arr||c.state!=='go')return;
+    c.state='yes';S.resolved++;bump('k4');log('hit','[配班] 重新檢查：'+c.s.name+' 已排入時段');
+    const yes=arr.filter(x=>x.state==='yes').length;
+    if(yes>=curNeed.n){const it=item('shift','need');it.n=Math.max(0,it.n-1);recalc();launch();spark(MOB?RK.x:536,MOB?RK.y-8:98,24,'#ffe69a');spider.happy=3;say('配好了！',3);log('hit','[完成] 需求已配滿');if(srcAlert&&srcAlert.desk==='shift'&&srcAlert.state==='new'){srcAlert.state='done';renderAlerts();}}
+    renderCands();kpis();
+  },2600);
 });
 
 /* ================= 即時小動態（待命時） ================= */
@@ -710,10 +718,15 @@ const EV=[
  ()=>({d:5,msg:'[定期單桌] 一張定期單完成續約',fx:()=>{const i=item('regular','expiring');i.n=Math.max(0,i.n-1);}}),
 ];
 let nextEv=3,nextAlert=7;
+let patrol=null;
+function startPatrol(){const d=pickA(DESKS);patrol={d,t:2.8};d.active=true;spider.focus=d.i;spider.evt=null;setMood('巡檢：'+d.name);}
+function stopPatrol(){if(patrol){patrol.d.active=false;patrol=null;}}
 function eventsUpdate(dt){
   if(crawl)return;
   nextEv-=dt;nextAlert-=dt;
-  if(nextAlert<=0){nextAlert=rr(35,60);if(pending().length<5&&!spider.sticky)newAlert();}
+  if(patrol){patrol.t-=dt;if(patrol.t<=0){const d=patrol.d;d.active=false;spider.focus=null;patrol=null;setMood('巡檢中');
+    if(pending().length<6&&Math.random()<.75){let t,k=0;do{t=pickA(TPL)();}while(t.desk!==d.k&&++k<40);if(t.desk===d.k)newAlert(t);}}return;}
+  if(nextAlert<=0){nextAlert=rr(9,16);if(!spider.evt)startPatrol();}
   if(nextEv>0||spider.evt||spider.focus!==null||spider.sleep>0)return;
   nextEv=rr(3.5,7)/speed;const e=pickA(EV)();spider.evt={leg:Math.random()*8|0,d:e.d,done:false,e};spider.legs[spider.evt.leg].hold=0;
 }
@@ -730,7 +743,7 @@ const KW=[[/出班需求|配班|派班|缺人/,'shift','need','出班需求'],[/
  [/增員|新人|面試|面談|教育訓練|訓練|開課|上線/,'recruit','*','增員進度'],[/報價|估價|督導/,'quote','stale','報價沒動靜'],[/預約|開單|沒開/,'order','unopened','預約沒開單'],[/任務未建立|未建立/,'order','nottask','任務未建立'],[/定期|到期|續約/,'regular','expiring','定期單即將到期'],
  [/付款/,'order','pay','需付款'],[/不匹配|金額/,'order','mismatch','金額不匹配'],[/待命|開班/,'shift','standby','待命時段'],[/訂單/,'order','pending','待處理訂單']];
 function runCommand(q){
-  q=q.trim();if(!q)return;
+  q=q.trim();if(!q)return;srcAlert=null;
   const dm=q.match(/(\d{1,2})\s*[\/月]\s*(\d{1,2})/),date=dm?(+dm[1])+'/'+(+dm[2]):null;
   const hit=KW.find(k=>k[0].test(q));
   log('hit','[你] 爬 '+q);
@@ -745,6 +758,7 @@ $('#chips').innerHTML=CH.map(c=>`<button data-q="${c}">${c.replace('爬 ','')}</
 $('#chips').onclick=e=>{const b=e.target.closest('button');if(b)runCommand(b.dataset.q.replace('爬 ',''));};
 DIST.forEach((d,i)=>{const o=document.createElement('option');o.value=i;o.textContent=d[0];$('#dz').appendChild(o);});
 function goDispatch(){
+  srcAlert=null;
   const m=$('#dd').value.match(/(\d{1,2})\s*[\/月]\s*(\d{1,2})/),t=new Date(Date.now()+864e5);
   const date=m?(+m[1])+'/'+(+m[2]):(t.getMonth()+1)+'/'+t.getDate(),pm=$('#dp').value==='pm';
   if(!m)$('#dd').value=date;
@@ -756,7 +770,7 @@ function showTab(t){[...$('#tabs').children].forEach(b=>b.classList.toggle('on',
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.t==='cand'&&!cands.length){$('#res').innerHTML='<div class="empty">在「出班需求」的結果裡按「幫我配班」。</div>';[...$('#tabs').children].forEach(x=>x.classList.toggle('on',x===b));return;}showTab(b.dataset.t);};
 // 配班爬完後出建議
 const _end=endCrawl;
-endCrawl=function(){const c=crawl;if(c&&c.dispatch){crawl=null;spider.hubOn=false;setMode('idle');spider.happy=2;setMood('閒晃中');say('找到候選人了，依序聯絡看看',4);buildCands(curNeed);log('hit','[爬爬] 配班建議已產生（'+cands.filter(x=>x.open).length+' 位有開班、'+cands.filter(x=>!x.open).length+' 位可聯絡）');return;}return _end();};
+endCrawl=function(){const c=crawl;if(c&&c.dispatch){crawl=null;spider.hubOn=false;setMode('idle');spider.happy=2;setMood('巡檢中');say('找到候選人了，依序聯絡看看',4);buildCands(curNeed);log('hit','[爬爬] 配班建議已產生（'+cands.filter(x=>x.open).length+' 位有開班、'+cands.filter(x=>!x.open).length+' 位可聯絡）');return;}return _end();};
 
 /* ================= UI ================= */
 function log(cls,html){
