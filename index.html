@@ -445,19 +445,18 @@ function drawWallScreen(){
 function drawWallScreen0(){
   const b=busy(),col=b>66?'#ff6b81':b>40?'#ffb35e':'#5ef2a4';
   txt('營運忙碌指數',112,26,7,'#7fd6ff','left',700);
-  // 儀表
-  ctx.lineWidth=5;ctx.strokeStyle='#16294a';ctx.beginPath();ctx.arc(142,76,24,Math.PI*.8,Math.PI*2.2);ctx.stroke();
-  ctx.strokeStyle=col;ctx.beginPath();ctx.arc(142,76,24,Math.PI*.8,Math.PI*(.8+1.4*b/100));ctx.stroke();
-  txt(String(b),142,78,14,col,'center',700);txt(b>66?'很忙':b>40?'有點忙':'輕鬆',142,91,6.5,'#9fb4dc');
+  // 儀表 + 下方趨勢線（同一個區塊）
+  ctx.lineWidth=5;ctx.strokeStyle='#16294a';ctx.beginPath();ctx.arc(142,56,21,Math.PI*.8,Math.PI*2.2);ctx.stroke();
+  ctx.strokeStyle=col;ctx.beginPath();ctx.arc(142,56,21,Math.PI*.8,Math.PI*(.8+1.4*b/100));ctx.stroke();
+  txt(String(b),142,58,13,col,'center',700);txt(b>66?'很忙':b>40?'有點忙':'輕鬆',142,70,6.2,'#9fb4dc');
+  ctx.save();ctx.beginPath();ctx.rect(112,78,60,18);ctx.clip();
+  const h=S.busyHist.slice(-30);ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();h.forEach((v,i)=>{const px=112+i*(60/(h.length-1)),py=95-v*14;i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.stroke();
+  ctx.lineTo(172,96);ctx.lineTo(112,96);ctx.fillStyle=col+'22';ctx.fill();ctx.restore();
+  ctx.strokeStyle='#16294a';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(184,22);ctx.lineTo(184,100);ctx.stroke();
   // 爬爬動態（取代原本下方的記錄區）
-  const LC={order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',recruit:'#b794ff',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'},recent=logs.slice(-4);
-  recent.forEach((l,k)=>{const m=l.html.length>31?l.html.slice(0,30)+'…':l.html;txt(m,178,38+k*11,6.4,(LC[l.cls]||'#9fb4dc')+(k===recent.length-1?'':'99'),'left');});
-  if(!recent.length)txt('爬爬巡檢中…',178,38,6.4,'#7c91b3','left');
-  // 小趨勢線
-  ctx.save();ctx.beginPath();ctx.rect(176,80,220,16);ctx.clip();
-  ctx.strokeStyle='#16294a';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(176,79);ctx.lineTo(396,79);ctx.stroke();
-  const h=S.busyHist;ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();h.forEach((v,i)=>{const px=176+i*(220/(h.length-1)),py=95-v*13;i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.stroke();
-  ctx.lineTo(396,96);ctx.lineTo(176,96);ctx.fillStyle=col+'22';ctx.fill();ctx.restore();
+  const LC={order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',recruit:'#b794ff',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'},recent=logs.slice(-6);
+  recent.forEach((l,k)=>{const m=l.html.length>33?l.html.slice(0,32)+'…':l.html;txt(m,192,31+k*12,6.4,(LC[l.cls]||'#9fb4dc')+(k===recent.length-1?'':'99'),'left');});
+  if(!recent.length)txt('爬爬巡檢中…',192,31,6.4,'#7c91b3','left');
 }
 
 /* ================= 爬爬繪製 ================= */
