@@ -94,7 +94,7 @@ button.sm{font-size:12px;padding:3px 9px}
 </head>
 <body>
 <header>
-  <div class="brand"><i></i>家政富爬爬調度 <small>CLEANRICH · CRAWLY DISPATCH</small></div>
+  <div class="brand"><i></i>家政富爬爬調度</div>
   <span id="clock"></span>
   <div class="kpis">
     <div class="kpi">忙碌指數<b id="k1">0</b></div>
@@ -187,7 +187,7 @@ const LW=640,LH=400,mq=matchMedia('(max-width:700px)');
 let MOB=mq.matches,VIEW={x:0,y:0,w:640,h:400};
 const NEST={x:474,y:168,nest:true},RK={x:474,y:234};
 const cv=$('#cv'),ctx=cv.getContext('2d'),stage=$('#stage');
-let W=0,H=0,DPR=1,U=1,OX=0,OY=0,T=0,speed=1;
+let W=0,H=0,DPR=1,U=1,OX=0,OY=0,T=0,speed=1,TXO=0;
 const S={mode:'idle',busyHist:Array.from({length:70},()=>.5),tick:'',resolved:0,crawlRows:null};
 const sparks=[],packets=[],bubbles=[],papers=[];
 let logs=[];
@@ -203,7 +203,7 @@ const R=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w
 function txt(s,x,y,size,color,align,weight){
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.font=`${weight||500} ${Math.max(MOB?7.5:9,size*U)}px "Noto Sans TC","PingFang TC",system-ui,sans-serif`;
-  ctx.fillStyle=color;ctx.textAlign=align||'center';ctx.fillText(s,OX+x*U,OY+y*U);ctx.restore();
+  ctx.fillStyle=color;ctx.textAlign=align||'center';ctx.fillText(s,OX+(x+TXO)*U,OY+y*U);ctx.restore();
 }
 function bubble(lines,x,y,col,size){
   if(typeof lines==='string')lines=[lines];
@@ -346,12 +346,8 @@ function launch(){if(!MOB||rocket.fly>0||rocket.back)return;rocket.fly=1.8;rocke
 function drawScene(){
   R(0,0,LW,LH,'#0a0f1f');R(0,0,LW,124,'#0e1730');R(0,124,LW,3,'#18274a');
   for(let x=8;x<LW;x+=24)for(let y=140;y<LH;y+=24)R(x,y,1,1,'#16223f');
-  R(98,12,306,100,'#18233f');R(101,15,300,94,'#070d1c');drawWallScreen();
-  for(const bx of [48,428]){R(bx,10,26,64,'#14203d');R(bx,70,26,4,'#0c1630');R(bx+9,28,8,8,'#4fd8ff');R(bx+7,26,12,1,'#4fd8ff');R(bx+7,37,12,1,'#4fd8ff');txt('爬',bx+13,56,9,'#9fe8ff','center',700);}
-  R(446,86,46,22,'#18233f');R(448,88,42,18,'#070d1c');
-  const d=new Date(),hh=String(d.getHours()).padStart(2,'0'),mm=String(d.getMinutes()).padStart(2,'0');
-  txt(hh+(d.getSeconds()%2?':':' ')+mm,469,101,10,'#7fd6ff','center',700);
-  drawNotes();drawPlaques();
+  ctx.save();if(!MOB)ctx.translate(-80,0);R(98,12,306,100,'#18233f');R(101,15,300,94,'#070d1c');drawWallScreen();ctx.restore();
+  drawNotes();
   for(const [px,py] of [[14,132],[14,318],[620,132],[612,318]])plant(px,py);
   R(62,362,150,20,'#1b2748');R(62,355,150,9,'#243257');R(62,362,6,20,'#243257');R(206,362,6,20,'#243257');
   for(let i=0;i<3;i++)R(72+i*46,357,40,6,'#1f2c52');
@@ -412,11 +408,6 @@ function drawRocket(){
   if(rocket.fly<=0&&!rocket.back&&Math.sin(T*3)>.2)R(x-1,y+14,2,2+(Math.sin(T*20)>0?1:0),'#ffb35e');
   if(MOB){txt('今日已解決',x,b+32,6.5,'#ffe69a','center',700);txt(S.resolved+' 件',x,b+41,6.5,'#9fb4dc');}
 }
-function drawPlaques(){
-  if(MOB)return;
-  [['今日已解決',S.resolved+' 件','#ffe69a',506],['待回覆',pending().length+' 則','#5ef2a4',570]].forEach(([l,v,c,x])=>{
-    R(x,86,60,22,'#18233f');R(x+2,88,56,18,'#070d1c');txt(l,x+30,95,5.5,c,'center',700);txt(v,x+30,104,7,'#e8f0ff','center',700);});
-}
 function drawRack(){
   const x=MOB?560:574,y=190;R(x,y,38,112,'#18233f');R(x+2,y+2,34,108,'#0a1226');
   for(let i=0;i<8;i++){R(x+4,y+5+i*13,30,10,'#141e3a');for(let j=0;j<4;j++){const on=Math.sin(T*(2+i*.7+j)+i*j)>.2;R(x+7+j*5,y+8+i*13,2,2,on?['#5ef2a4','#4fd8ff','#ffb35e','#5ef2a4'][j]:'#1c2a4a');}R(x+25,y+9+i*13,7,1,'#2c3b66');}
@@ -428,12 +419,21 @@ function drawBot(){
   if(bot.spin>0)txt('?',x,y-12,8,'#ffe69a');
 }
 function drawNotes(){
-  R(506,12,124,70,'#18233f');R(508,14,120,66,'#0a1226');txt('爬爬便利貼',568,25,7,'#9fb4dc','center',700);
-  const L=pending().slice(-3).reverse(),cols=['#ffe69a','#ffb0c8','#a8d8ff'];
-  if(!L.length){txt('目前沒有待回覆',568,50,7,'#5ef2a4');txt('一切安好',568,62,7,'#7c91b3');}
-  L.forEach((a,i)=>{R(512,29+i*17,112,15,cols[i]);txt(a.short,568,40+i*17,6.8,'#2a2410','center',700);});
+  if(MOB)return;
+  R(334,12,298,100,'#18233f');R(336,14,294,96,'#0a1226');
+  const cc=['#ffe69a','#ffb0c8','#a8d8ff'],L=pending(),grp=a=>a.win==='上週'?0:a.win==='下週'?2:1;
+  ['上週','這週','下週'].forEach((t,ci)=>{
+    const x=340+ci*97,xc=x+46,items=L.filter(a=>grp(a)===ci).reverse();
+    txt(t+(items.length?'　'+items.length:''),xc,24,7,'#9fb4dc','center',700);
+    items.slice(0,3).forEach((a,i)=>{R(x,30+i*21,92,17,cc[ci]);txt((a.win==='增員'?'增員・':'')+a.short,xc,42+i*21,6.8,'#2a2410','center',700);});
+    if(!items.length)txt('沒有',xc,56,6.5,'#3b4d73');
+    else if(items.length>3)txt('還有 '+(items.length-3)+' 則',xc,102,6.5,'#7c91b3');
+  });
 }
 function drawWallScreen(){
+  TXO=MOB?0:-80;try{drawWallScreen0();}finally{TXO=0;}
+}
+function drawWallScreen0(){
   const b=busy(),col=b>66?'#ff6b81':b>40?'#ffb35e':'#5ef2a4';
   txt('營運忙碌指數',112,26,7,'#7fd6ff','left',700);
   // 儀表
@@ -539,10 +539,10 @@ const TPL=[
  ()=>({win:'這週',desk:'order',item:'nottask',inc:1,short:'收款後沒建任務',say:'有張訂單客戶已付款，任務還沒建立，請建立',text:'客戶已付款，任務還沒建立，請建立任務'}),
  ()=>({win:'這週',desk:'order',item:'unopened',inc:1,short:'預約沒開單',say:'客戶下了預約單，還沒開單，請開單',text:'客戶預約單還沒開單，請開單'}),
  ()=>{const k=2+(Math.random()*5|0);return{win:'這週',desk:'quote',item:'stale',inc:1,short:'報價沒動靜',say:'有張報價單開了 '+k+' 天，沒有後續動作，請聯絡客戶',text:'報價單建立 '+k+' 天，沒有後續動作，請聯絡客戶'};},
- ()=>{const k=item('recruit','wait').n+1;return{win:'供給',desk:'recruit',item:'wait',inc:1,short:k>=2?'可以開課了':'再1位就開課',say:k>=2?'面試完成的新人有 '+k+' 位了，可以開 8 小時訓練課囉':'面試完成的新人只有 '+k+' 位，再 1 位就能開訓練課',text:k>=2?'面試完成 '+k+' 位，可以開訓練課':'面試完成 '+k+' 位，還差 '+(2-k)+' 位才能開課'};},
- ()=>{const n=2+(Math.random()*2|0);return{win:'供給',desk:'recruit',item:'trial',inc:n,short:'新人待配班',say:n+' 位新人上完 8 小時課了，還沒安排第一班',text:n+' 位新人上完課，還沒安排配班出勤'};},
- ()=>({win:'供給',desk:'recruit',item:'trial',inc:0,short:'新人試跑停滯',say:'有位新人配了 2 班後，10 天沒再排班了',text:'新人配班試跑 10 天沒有進度'}),
- ()=>({win:'供給',desk:'recruit',item:'ready',inc:1,short:'可開放開班',say:'有新人已配滿 4 班，可以開放自己開班了',text:'新人配滿班數，可開放自己開班'}),
+ ()=>{const k=item('recruit','wait').n+1;return{win:'增員',desk:'recruit',item:'wait',inc:1,short:k>=2?'可以開課了':'再1位就開課',say:k>=2?'面試完成的新人有 '+k+' 位了，可以開 8 小時訓練課囉':'面試完成的新人只有 '+k+' 位，再 1 位就能開訓練課',text:k>=2?'面試完成 '+k+' 位，可以開訓練課':'面試完成 '+k+' 位，還差 '+(2-k)+' 位才能開課'};},
+ ()=>{const n=2+(Math.random()*2|0);return{win:'增員',desk:'recruit',item:'trial',inc:n,short:'新人待配班',say:n+' 位新人上完 8 小時課了，還沒安排第一班',text:n+' 位新人上完課，還沒安排配班出勤'};},
+ ()=>({win:'增員',desk:'recruit',item:'trial',inc:0,short:'新人試跑停滯',say:'有位新人配了 2 班後，10 天沒再排班了',text:'新人配班試跑 10 天沒有進度'}),
+ ()=>({win:'增員',desk:'recruit',item:'ready',inc:1,short:'可開放開班',say:'有新人已配滿 4 班，可以開放自己開班了',text:'新人配滿班數，可開放自己開班'}),
 ];
 function newAlert(t0){
   const t=t0||pickA(TPL)(),a=Object.assign({id:alertId++,state:'new',t0:Date.now(),left:Math.max(1,t.inc)},t);
@@ -651,7 +651,7 @@ function addRow(r){
   el.appendChild(bt);box.appendChild(el);
 }
 function resolveRow(r,el){
-  const it=item(r.dk,r.ik);it.n=Math.max(0,it.n-1);recalc();el.remove();S.resolved++;if(srcAlert&&srcAlert.state==='new'&&srcAlert.desk===r.dk&&--srcAlert.left<=0){srcAlert.state='done';renderAlerts();}launch();spark(MOB?RK.x:536,MOB?RK.y-8:98,12,'#ffe69a');
+  const it=item(r.dk,r.ik);it.n=Math.max(0,it.n-1);recalc();el.remove();S.resolved++;if(srcAlert&&srcAlert.state==='new'&&srcAlert.desk===r.dk&&--srcAlert.left<=0){srcAlert.state='done';renderAlerts();}launch();spark(MOB?RK.x:469,MOB?RK.y-8:97,12,'#ffe69a');
   spider.happy=1.5;say('+1 解決！',2);bump('k4');kpis();log('hit','[已處理] '+deskOf(r.dk).name+'：'+it.l+' −1');
 }
 
@@ -701,7 +701,7 @@ $('#res').addEventListener('click',e=>{
     if(cands!==arr||c.state!=='go')return;
     c.state='yes';S.resolved++;bump('k4');log('hit','[配班] 重新檢查：'+c.s.name+' 已排入時段');
     const yes=arr.filter(x=>x.state==='yes').length;
-    if(yes>=curNeed.n){const it=item('shift','need');it.n=Math.max(0,it.n-1);recalc();launch();spark(MOB?RK.x:536,MOB?RK.y-8:98,24,'#ffe69a');spider.happy=3;say('配好了！',3);log('hit','[完成] 需求已配滿');if(srcAlert&&srcAlert.desk==='shift'&&srcAlert.state==='new'){srcAlert.state='done';renderAlerts();}}
+    if(yes>=curNeed.n){const it=item('shift','need');it.n=Math.max(0,it.n-1);recalc();launch();spark(MOB?RK.x:469,MOB?RK.y-8:97,24,'#ffe69a');spider.happy=3;say('配好了！',3);log('hit','[完成] 需求已配滿');if(srcAlert&&srcAlert.desk==='shift'&&srcAlert.state==='new'){srcAlert.state='done';renderAlerts();}}
     renderCands();kpis();
   },2600);
 });
