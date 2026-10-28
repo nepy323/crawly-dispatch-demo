@@ -277,7 +277,7 @@ class Worker{
 const workers=DESKS.map(d=>new Worker(d));
 
 /* ================= 爬爬（資料蜘蛛） ================= */
-let SKIN='spider';try{SKIN=localStorage.getItem('crawlySkin')==='orb'?'orb':'spider';}catch(e){}
+let SKIN='orb';try{SKIN=localStorage.getItem('crawlySkin')==='spider'?'spider':'orb';}catch(e){}
 const spider={x:250,y:112,wp:{x:250,y:112},wt:3,legs:[],hub:{x:194,y:218},evt:null,pulse:0,say:null,sayT:0,sticky:false,focus:null,sleep:0,blink:0,nb:2,mood:'巡檢中',surprise:0,happy:0,hubOn:false};
 for(let i=0;i<8;i++)spider.legs.push({a:i/8*6.283+.4,l1:68,l2:76,fx:250,fy:112,tx:250,ty:112,hold:Math.random()*2,touched:false,side:i%2?1:-1,col:i%2?'#ff9fe0':'#9fd8ff',job:null,kx:0,ky:0,tgt:null});
 const POI=[];
