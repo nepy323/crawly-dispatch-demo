@@ -45,6 +45,12 @@ button.sm{font-size:12px;padding:3px 9px}
 .alert::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:8px 0 0 8px;background:var(--c)}
 @keyframes newa{from{background:#33270f;transform:translateX(-10px)}}
 .alert b{font-size:12px;color:var(--c)}.alert p{margin:2px 0 6px;font-size:13px}.alert small{color:var(--mu);margin-left:6px}
+#flow{position:relative;overflow:hidden;height:32px;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;background:#0b1326;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 26px,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,transparent,#000 26px,#000 calc(100% - 26px),transparent)}
+#flowTrack{position:absolute;left:0;top:0;height:100%;display:flex;align-items:center;will-change:transform}
+.fi{display:inline-flex;align-items:center;gap:7px;margin-right:44px;font-size:13px;cursor:pointer;color:var(--tx)}
+.fi i{width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 6px var(--c)}
+.fi .w{padding:0 6px;border:1px solid var(--line);border-radius:9px;font-size:10.5px;color:var(--mu)}
+.fi.info{opacity:.55}
 .alert .bt{display:flex;gap:6px}
 .alert .win{display:inline-block;margin-right:6px;padding:0 6px;border:1px solid var(--line);border-radius:9px;font-size:10.5px;color:var(--mu);vertical-align:1px}
 .empty{color:var(--mu);font-size:12.5px;padding:10px 0}
@@ -124,11 +130,11 @@ main>.center{grid-column:1;grid-row:1/span 2}#pa{grid-column:2;grid-row:1}#pb{gr
   </section>
 
   <section class="center">
+    <div id="flow" title="爬爬剛發現與剛發生的事（滑鼠移上去暫停，點一下看明細）"><div id="flowTrack"></div></div>
     <div class="stage" id="stage"><canvas id="cv"></canvas>
       <div class="hud"><span class="chip" id="mode">待命</span><span class="chip" id="mood">爬爬：巡檢中</span></div>
     </div>
     <div id="msg"></div>
-    <div class="console" id="log"></div>
   </section>
 
   <div class="mtabs" id="mtabs"><button data-m="a" class="on">爬爬的話<b id="mbadge"></b></button><button data-m="b">指令與結果</button></div>
@@ -443,15 +449,15 @@ function drawWallScreen0(){
   ctx.lineWidth=5;ctx.strokeStyle='#16294a';ctx.beginPath();ctx.arc(142,76,24,Math.PI*.8,Math.PI*2.2);ctx.stroke();
   ctx.strokeStyle=col;ctx.beginPath();ctx.arc(142,76,24,Math.PI*.8,Math.PI*(.8+1.4*b/100));ctx.stroke();
   txt(String(b),142,78,14,col,'center',700);txt(b>66?'很忙':b>40?'有點忙':'輕鬆',142,91,6.5,'#9fb4dc');
-  // 曲線
-  ctx.save();ctx.beginPath();ctx.rect(176,34,220,60);ctx.clip();
-  ctx.strokeStyle='#16294a';ctx.lineWidth=.6;for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(176,38+i*16);ctx.lineTo(396,38+i*16);ctx.stroke();}
-  const h=S.busyHist;ctx.strokeStyle=col;ctx.lineWidth=1.1;ctx.beginPath();h.forEach((v,i)=>{const px=176+i*(220/(h.length-1)),py=92-v*52;i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.stroke();
-  ctx.lineTo(396,94);ctx.lineTo(176,94);ctx.fillStyle=col+'22';ctx.fill();ctx.restore();
-  // 跑馬燈
-  R(104,98,294,10,'#0b1530');
-  const msg=S.tick||'爬爬巡邏中…';
-  ctx.save();ctx.beginPath();ctx.rect(104,98,294,10);ctx.clip();txt(msg,104+294-((T*28)%(294+msg.length*7)),106,6.5,'#7fd6ff','left');ctx.restore();
+  // 爬爬動態（取代原本下方的記錄區）
+  const LC={order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',recruit:'#b794ff',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'},recent=logs.slice(-4);
+  recent.forEach((l,k)=>{const m=l.html.length>31?l.html.slice(0,30)+'…':l.html;txt(m,178,38+k*11,6.4,(LC[l.cls]||'#9fb4dc')+(k===recent.length-1?'':'99'),'left');});
+  if(!recent.length)txt('爬爬巡檢中…',178,38,6.4,'#7c91b3','left');
+  // 小趨勢線
+  ctx.save();ctx.beginPath();ctx.rect(176,80,220,16);ctx.clip();
+  ctx.strokeStyle='#16294a';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(176,79);ctx.lineTo(396,79);ctx.stroke();
+  const h=S.busyHist;ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();h.forEach((v,i)=>{const px=176+i*(220/(h.length-1)),py=95-v*13;i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.stroke();
+  ctx.lineTo(396,96);ctx.lineTo(176,96);ctx.fillStyle=col+'22';ctx.fill();ctx.restore();
 }
 
 /* ================= 爬爬繪製 ================= */
@@ -770,7 +776,7 @@ function eventsUpdate(dt){
 function idlePacket(l,p,i){
   const ev=spider.evt;
   if(ev&&ev.leg===i&&p.d===ev.d&&!ev.done){
-    ev.done=true;const e=ev.e;
+    ev.done=true;const e=ev.e;flowInfo.push({t:Date.now(),d:p.d,text:e.msg.replace(/^\[[^\]]+\]\s*/,'')});if(flowInfo.length>8)flowInfo.shift();
     spawnPacket(l,p.col,()=>{e.fx();recalc();log(DESKS[p.d].k,e.msg);S.tick=e.msg.replace(/^\[[^\]]+\]\s*/,'');workers[p.d].say=pickA(['收到','哦','+1']);workers[p.d].sayT=1.4;kpis();setTimeout(()=>{spider.evt=null;},800);});
   }else if(spider.sleep<=0)spawnPacket(l,p.col||'#7fd6ff',null);
 }
@@ -813,7 +819,7 @@ endCrawl=function(){const c=crawl;if(c&&c.dispatch){crawl=null;spider.hubOn=fals
 function log(cls,html){
   const t=new Date().toTimeString().slice(0,8);logs.push({cls,t,html});if(logs.length>7)logs.shift();
   const colr={order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',recruit:'#b794ff',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'}[cls]||'#7c91b3';
-  $('#log').innerHTML=logs.map(l=>`<div style="color:${{order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',recruit:'#b794ff',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'}[l.cls]||'#7c91b3'}"><time>${l.t}</time>${esc(l.html)}</div>`).join('');
+  const logEl=$('#log');if(logEl)logEl.innerHTML=logs.map(l=>`<div style="color:${{order:'#ff6b6b',slot:'#5aa9ff',shift:'#5ef2a4',quote:'#ffb35e',recruit:'#b794ff',regular:'#7fe0d6',hit:'#ffe69a',bad:'#ff6b81'}[l.cls]||'#7c91b3'}"><time>${l.t}</time>${esc(l.html)}</div>`).join('');
 }
 function bump(id){const k=$('#'+id);k.classList.remove('bump');void k.offsetWidth;k.classList.add('bump');}
 function kpis(){$('#mbadge').textContent=pending().length||'';$('#k1').textContent=busy();$('#k2').textContent=totalAll();$('#k3').textContent=pending().length;$('#k4').textContent=S.resolved;}
@@ -825,12 +831,38 @@ $('#spd').onclick=e=>{const b=e.target.closest('button');if(!b)return;speed=+b.d
 
 /* ================= 啟動 ================= */
 let last=performance.now();
-function frame(now){const raw=Math.min(.05,(now-last)/1000);last=now;update(raw*speed);eventsUpdate(raw*speed);draw();requestAnimationFrame(frame);}
+/* ================= 資料流橫條 ================= */
+const flowInfo=[];let flowOff=-9999,flowIdx=0,flowHover=false;
+const flowBox=$('#flow'),flowTrack=$('#flowTrack');
+flowBox.onmouseenter=()=>flowHover=true;flowBox.onmouseleave=()=>flowHover=false;
+function openAlert(a){srcAlert=a;dismissSay();startCrawl({desk:a.desk,item:a.item,date:a.date,label:a.text});}
+function flowList(){
+  const L=pending().map(a=>({a,d:deskOf(a.desk),text:a.text,win:a.win,cls:''}));
+  if(!MOB){const now=Date.now();flowInfo.filter(x=>now-x.t<150000).forEach(x=>L.push({d:DESKS[x.d],text:x.text,cls:' info'}));}
+  return L.length?L:[{d:{col:'#7fd6ff'},text:'爬爬巡檢中，目前沒有待處理的狀況',cls:' info'}];
+}
+function flowNext(){
+  const L=flowList(),it=L[flowIdx++%L.length],el=document.createElement('span');
+  el.className='fi'+it.cls;el.style.setProperty('--c',it.d.col);
+  el.innerHTML='<i></i>'+(it.d.name?'<b style="color:'+it.d.col+';font-weight:600">'+it.d.name+'</b>':'')+(it.win?'<span class="w">'+esc(it.win)+'</span>':'')+'<span>'+esc(it.text)+'</span>';
+  if(it.a)el.onclick=()=>openAlert(it.a);
+  flowTrack.appendChild(el);
+}
+function flowUpdate(dt){
+  const bw=flowBox.clientWidth;if(!bw)return;
+  if(flowOff===-9999)flowOff=-bw;
+  if(!flowHover&&!document.hidden)flowOff+=(MOB?38:48)*Math.min(dt,.05);
+  for(let g=0;g<12;g++){const l=flowTrack.lastElementChild,end=l?l.offsetLeft+l.offsetWidth+44:0;if(end-flowOff<bw+60)flowNext();else break;}
+  const f=flowTrack.firstElementChild;
+  if(f&&flowTrack.children.length>1&&f.offsetLeft+f.offsetWidth+44<flowOff-10){const w=f.offsetWidth+44;flowTrack.removeChild(f);flowOff-=w;}
+  flowTrack.style.transform='translateX('+(-flowOff).toFixed(1)+'px)';
+}
+function frame(now){const raw=Math.min(.05,(now-last)/1000);last=now;update(raw*speed);eventsUpdate(raw*speed);flowUpdate(raw);draw();requestAnimationFrame(frame);}
 applyMode();resize();addEventListener('resize',resize);mq.addEventListener('change',()=>{applyMode();resize();});
 renderAlerts();kpis();setInterval(kpis,1500);
 log('hit','[爬爬] 早安！我先到處巡一圈，有狀況會跟你說。');
 setTimeout(()=>{if(!alerts.length)newAlert();},2500);
-window.__dbg={S,update,draw,spider,DESKS,alerts,newAlert,runCommand,startCrawl,workers,get crawl(){return crawl},get cands(){return cands},startDispatch,eventsUpdate};
+window.__dbg={S,update,draw,spider,DESKS,alerts,newAlert,runCommand,startCrawl,workers,get crawl(){return crawl},get cands(){return cands},startDispatch,eventsUpdate,flowUpdate};
 requestAnimationFrame(frame);
 })();
 </script>
