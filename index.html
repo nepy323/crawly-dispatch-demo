@@ -46,10 +46,13 @@ button.sm{font-size:12px;padding:3px 9px}
 @keyframes newa{from{background:#33270f;transform:translateX(-10px)}}
 .alert b{font-size:12px;color:var(--c)}.alert p{margin:2px 0 6px;font-size:13px}.alert small{color:var(--mu);margin-left:6px}
 .alert .bt{display:flex;gap:6px}
+.alert .win{display:inline-block;margin-right:6px;padding:0 6px;border:1px solid var(--line);border-radius:9px;font-size:10.5px;color:var(--mu);vertical-align:1px}
 .empty{color:var(--mu);font-size:12.5px;padding:10px 0}
 .speed{display:flex;gap:6px;margin-top:10px}.speed button{flex:1;padding:4px}
 .cmd{display:flex;gap:6px}.cmd input{flex:1;min-width:0;background:#070d16;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;font-size:13px}
 .cmd input:focus{outline:none;border-color:var(--blue)}
+.dsp{display:flex;gap:6px;align-items:center;margin-top:7px;flex-wrap:wrap}.dsp b{font-size:12px;color:var(--mu)}
+.dsp input,.dsp select{background:#070d16;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:7px 8px;font:inherit;font-size:13px;min-width:0}.dsp input{width:96px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}.chips button{border-radius:99px;font-size:11.5px;padding:2px 9px;color:var(--mu)}
 .tabs{display:flex;gap:6px;margin-bottom:8px}.tabs button{flex:1;padding:4px}
 #res{max-height:430px;overflow:auto}
@@ -131,6 +134,7 @@ button.sm{font-size:12px;padding:3px 9px}
   <section class="panel" id="pb">
     <h3>叫爬爬去爬</h3>
     <div class="cmd"><input id="q" placeholder="例如：爬 10/29 出班需求" autocomplete="off"><button class="pri" id="qgo">爬</button></div>
+    <div class="dsp"><b>配班</b><input id="dd" placeholder="日期 10/29" autocomplete="off" inputmode="text"><select id="dp"><option value="am">上午</option><option value="pm">下午</option></select><select id="dz"></select><button class="pri" id="dgo">找人</button></div>
     <div class="chips" id="chips"></div>
     <div class="tabs" id="tabs"><button data-t="res" class="on">爬到的東西</button><button data-t="cand">配班建議</button></div>
     <div id="res"><div class="empty">還沒叫爬爬去爬東西。</div></div>
@@ -520,18 +524,20 @@ const alerts=[];let alertId=1;
 const pending=()=>alerts.filter(a=>a.state==='new');
 const fmtD=()=>{const d=new Date(Date.now()+(1+(Math.random()*4|0))*864e5);return (d.getMonth()+1)+'/'+d.getDate();};
 const TPL=[
- ()=>{const d=fmtD(),s=sname();return{desk:'slot',item:'unconf',inc:1,short:'有人沒確認',say:d+' 有人還沒點確認，我去看看嗎？',text:d+' '+pickA(SVC)+'：'+s+' 還沒點確認',date:d};},
- ()=>{const n=2+(Math.random()*4|0);return{desk:'slot',item:'noaccept',inc:n,short:'有時段沒驗收',say:'昨天有 '+n+' 個時段做完了，還沒驗收',text:n+' 個時段做完還沒驗收'};},
- ()=>({desk:'slot',item:'nostart',inc:1,short:'時段沒點開始',say:'有個時段過了開工時間，人員還沒點開始',text:'有時段過了開工時間還沒點「開始」'}),
- ()=>({desk:'order',item:'unopened',inc:1,short:'預約沒開單',say:'客戶下了預約單，我們還沒開單喔',text:'客戶預約單還沒開'}),
- ()=>{item('recruit','wait').n;const k=item('recruit','wait').n+1;return{desk:'recruit',item:'wait',inc:1,short:k>=2?'可以開課了':'再1位就開課',say:k>=2?'面試完成的新人有 '+k+' 位了，可以開 8 小時訓練課囉':'面試完成的新人只有 '+k+' 位，再 1 位就能開訓練課',text:k>=2?'面試完成 '+k+' 位，可以開訓練課':'面試完成 '+k+' 位，還差 '+(2-k)+' 位才能開課'};},
- ()=>{const n=2+(Math.random()*2|0);return{desk:'recruit',item:'trial',inc:n,short:'新人待配班',say:n+' 位新人上完 8 小時課了，還沒安排第一班',text:n+' 位新人上完課，還沒安排配班出勤'};},
- ()=>({desk:'recruit',item:'trial',inc:0,short:'新人試跑停滯',say:'有位新人配了 2 班後，10 天沒再排班了',text:'新人配班試跑 10 天沒有進度'}),
- ()=>({desk:'recruit',item:'ready',inc:1,short:'可開放開班',say:'有新人已配滿 4 班，可以開放自己開班了',text:'新人配滿班數，可開放自己開班'}),
- ()=>({desk:'quote',item:'stale',inc:1,short:'報價沒動靜',say:'督導建的報價單 2 天了，行政沒回應',text:'督導建立報價單後，行政還沒跟進'}),
- ()=>{const d=fmtD(),n=2+(Math.random()*3|0);return{desk:'shift',item:'need',inc:n,short:d+' 缺人',say:d+' 有 '+n+' 個出班需求還沒配到人，要我爬嗎？',text:d+' 有 '+n+' 個出班需求還沒配到人',date:d};},
- ()=>{const n=2+(Math.random()*3|0);return{desk:'regular',item:'expiring',inc:n,short:'定期單到期',say:'有 '+n+' 張定期單 7 天內到期',text:n+' 張定期單 7 天內到期'};},
- ()=>{const n=3+(Math.random()*8|0);return{desk:'order',item:'mismatch',inc:n,short:'金額不匹配',say:'金額不匹配又多了 '+n+' 筆',text:'金額不匹配新增 '+n+' 筆'};},
+ ()=>{const d=fmtD(),h=6+(Math.random()*40|0),s=sname();return{win:'下週',desk:'slot',item:'unconf',inc:1,short:'時段未確認',say:d+' 的時段 '+s+' 還沒確認，請聯絡他',text:d+' '+pickA(SVC)+'：簡訊發出 '+h+' 小時，'+s+' 未確認，請聯絡人員',date:d};},
+ ()=>{const h=1+(Math.random()*5|0);return{win:'上週',desk:'slot',item:'nostart',inc:1,short:'時段沒點開始',say:'有個時段過了開工時間 '+h+' 小時，沒有開始記錄，請聯絡人員',text:pickA(SVC)+'：已過開工時間 '+h+' 小時，沒有「開始」記錄，請聯絡人員'};},
+ ()=>{const h=2+(Math.random()*20|0);return{win:'上週',desk:'slot',item:'noend',inc:1,short:'時段沒點結束',say:'有個時段過了結束時間 '+h+' 小時，沒有結束記錄，請聯絡人員',text:pickA(SVC)+'：已過結束時間 '+h+' 小時，沒有「結束」記錄，請聯絡人員'};},
+ ()=>{const n=2+(Math.random()*4|0);return{win:'上週',desk:'slot',item:'noaccept',inc:n,short:'時段沒驗收',say:n+' 個時段做完了還沒驗收，請跟進',text:n+' 個時段已完成，尚未驗收，請跟進'};},
+ ()=>{const d=fmtD(),k=1+(Math.random()*5|0);return{win:'下週',desk:'shift',item:'unassigned',inc:1,short:'任務沒安排人員',say:d+' 的任務建立 '+k+' 天了，還沒安排人員，請配班',text:d+' '+pickA(SVC)+'：任務已建立 '+k+' 天，還沒安排人員，請配班',date:d};},
+ ()=>{const d=fmtD(),n=2+(Math.random()*3|0);return{win:'下週',desk:'shift',item:'need',inc:n,short:d+' 缺人',say:d+' 有 '+n+' 個出班需求沒配到人，要我爬嗎？',text:d+' 有 '+n+' 個出班需求還沒配到人',date:d};},
+ ()=>{const k=1+(Math.random()*5|0);return{win:'這週',desk:'order',item:'pay',inc:1,short:'訂單沒收款',say:'有張訂單付款連結發出 '+k+' 天了，還沒收到款項，請聯絡客戶',text:'付款連結已發出 '+k+' 天，尚未收到款項，請聯絡客戶'};},
+ ()=>({win:'這週',desk:'order',item:'nottask',inc:1,short:'收款後沒建任務',say:'有張訂單客戶已付款，任務還沒建立，請建立',text:'客戶已付款，任務還沒建立，請建立任務'}),
+ ()=>({win:'這週',desk:'order',item:'unopened',inc:1,short:'預約沒開單',say:'客戶下了預約單，還沒開單，請開單',text:'客戶預約單還沒開單，請開單'}),
+ ()=>{const k=2+(Math.random()*5|0);return{win:'這週',desk:'quote',item:'stale',inc:1,short:'報價沒動靜',say:'有張報價單開了 '+k+' 天，沒有後續動作，請聯絡客戶',text:'報價單建立 '+k+' 天，沒有後續動作，請聯絡客戶'};},
+ ()=>{const k=item('recruit','wait').n+1;return{win:'供給',desk:'recruit',item:'wait',inc:1,short:k>=2?'可以開課了':'再1位就開課',say:k>=2?'面試完成的新人有 '+k+' 位了，可以開 8 小時訓練課囉':'面試完成的新人只有 '+k+' 位，再 1 位就能開訓練課',text:k>=2?'面試完成 '+k+' 位，可以開訓練課':'面試完成 '+k+' 位，還差 '+(2-k)+' 位才能開課'};},
+ ()=>{const n=2+(Math.random()*2|0);return{win:'供給',desk:'recruit',item:'trial',inc:n,short:'新人待配班',say:n+' 位新人上完 8 小時課了，還沒安排第一班',text:n+' 位新人上完課，還沒安排配班出勤'};},
+ ()=>({win:'供給',desk:'recruit',item:'trial',inc:0,short:'新人試跑停滯',say:'有位新人配了 2 班後，10 天沒再排班了',text:'新人配班試跑 10 天沒有進度'}),
+ ()=>({win:'供給',desk:'recruit',item:'ready',inc:1,short:'可開放開班',say:'有新人已配滿 4 班，可以開放自己開班了',text:'新人配滿班數，可開放自己開班'}),
 ];
 function newAlert(){
   const t=pickA(TPL)(),a=Object.assign({id:alertId++,state:'new',t0:Date.now()},t);
@@ -545,7 +551,7 @@ function dismissSay(){spider.say=null;spider.sticky=false;spider.focus=null;}
 function renderAlerts(){
   const L=pending();
   $('#alerts').innerHTML=L.slice().reverse().map(a=>{const d=deskOf(a.desk),m=Math.max(0,(Date.now()-a.t0)/6e4|0);
-    return `<li class="alert" style="--c:${d.col}"><b>${d.name}</b><small>${m<1?'剛剛':m+' 分鐘前'}</small><p>${esc(a.text)}</p><div class="bt"><button class="sm pri" data-a="crawl" data-id="${a.id}">爬一下</button><button class="sm" data-a="later" data-id="${a.id}">晚點</button></div></li>`;}).join('')||'<div class="empty">爬爬目前沒有要說的事。</div>';
+    return `<li class="alert" style="--c:${d.col}"><b>${d.name}</b><small>${m<1?'剛剛':m+' 分鐘前'}</small><p>${a.win?`<span class="win">${a.win}</span>`:''}${esc(a.text)}</p><div class="bt"><button class="sm pri" data-a="crawl" data-id="${a.id}">爬一下</button><button class="sm" data-a="later" data-id="${a.id}">晚點</button></div></li>`;}).join('')||'<div class="empty">爬爬目前沒有要說的事。</div>';
   $('#acount').textContent=L.length?L.length+' 則':'';
   DESKS.forEach(d=>d.alert=L.some(a=>a.desk===d.k));
 }
@@ -572,10 +578,10 @@ function genRows(dk,ik,date){
       case'slot/noaccept':r={t:'#'+tid()+' '+pickA(SVC)+' · '+pickA(DIST)[0],s:sname()+' 完成於 '+(1+(Math.random()*5|0))+' 天前，尚未驗收'};break;
       case'shift/need':{const nd={svc:pickA(SVC),dist:Math.random()*DIST.length|0,date:d(),slot:slotT(),n:1+(Math.random()*2|0),client:cl()};r={t:nd.date+' '+nd.slot+' · '+DIST[nd.dist][0]+' · '+nd.svc,s:nd.client+'　需要 '+nd.n+' 人，尚未配班',need:nd};break;}
       case'shift/standby':r={t:sname()+' 開班待命',s:d()+' '+slotT()+' · '+pickA(DIST)[0]};break;
-      case'shift/unassigned':r={t:'#'+oid()+' 未完成派班',s:'任務時段還沒填入人員'};break;
+      case'shift/unassigned':r={t:'#'+oid()+' 未完成派班',s:'任務已建立，還沒安排人員'};break;
       case'quote/quoting':r={t:'報價 #'+tid()+' '+cl(),s:'督導 '+sname()+' 建立，估價中'};break;
       case'quote/stale':r={t:'報價 #'+tid()+' '+cl(),s:'督導 '+sname()+' 建立後 '+(2+(Math.random()*4|0))+' 天，行政沒有回應'};break;
-      case'order/nottask':r={t:'#'+oid()+' '+cl(),s:'訂單已建立，任務還沒建立'};break;
+      case'order/nottask':r={t:'#'+oid()+' '+cl(),s:'客戶已付款，任務還沒建立'};break;
       case'order/unopened':r={t:cl()+' 預約 '+d()+' '+pickA(SVC),s:'客戶預約，尚未開單'};break;
       case'recruit/wait':r={t:rname()+' 面試完成',s:'面試後 '+(1+(Math.random()*9|0))+' 天，等累積 2 位以上才開訓練課'};break;
       case'recruit/training':r={t:rname()+' 教育訓練中',s:'已上 '+(Math.random()*8|0)+'／8 小時，預計 '+d()+' 結訓'};break;
@@ -646,7 +652,7 @@ function startDispatch(need,rowEl){
   if(crawl){say('等我爬完這個',2);return;}
   setM('b');curNeed=need;crawl={q:{label:'配班：'+need.date+' '+DIST[need.dist][0]},jobs:[],total:0,got:0,done:0,dispatch:true};
   spider.focus=null;spider.sleep=0;spider.evt=null;spider.hubOn=true;setMode('run');setMood('幫忙配班中');
-  say('配班！我去翻班表、時段、訂單',3);log('hit','[爬爬] 開始配班：'+need.date+' '+need.slot+' '+DIST[need.dist][0]+' '+need.svc+' 需 '+need.n+' 人');
+  say('配班！我去翻班表、時段、訂單',3);log('hit','[爬爬] 開始配班：'+need.date+' '+need.slot+' '+DIST[need.dist][0]+' '+(need.svc==='不限'?'':need.svc+' ')+'需 '+need.n+' 人');
   [2,1,0].forEach(i=>{
     const d=DESKS[i],l=spider.legs[i],rows=Array.from({length:6},()=>({t:'',s:'',col:d.col,dk:d.k}));
     d.active=true;l.job={desk:i,p:{x:d.mx,y:d.my},state:'reach',queue:rows,timer:0,pend:rows.length};l.touched=false;crawl.jobs.push(l.job);crawl.total+=rows.length;
@@ -658,14 +664,15 @@ function startDispatch(need,rowEl){
 const _addRow=addRow;
 addRow=function(r){if(crawl&&crawl.silent)return;_addRow(r);};
 function buildCands(n){
-  const openFlag=s=>((s.id*131+n.date.length*17+n.dist*7)%100)<45;
+  const dseed=n.date.split('').reduce((a,c)=>a+c.charCodeAt(0),0)+(n.period==='pm'?29:0);
+  const openFlag=s=>((s.id*131+dseed*17+n.dist*7)%100)<45,busyFlag=s=>((s.id*97+dseed*13)%100)<15;
   cands=staff.map(s=>{
     const served=s.jobs.filter(j=>j.client===n.client).length,same=s.jobs.filter(j=>j.svc===n.svc&&j.dist===n.dist).length,svcN=s.jobs.filter(j=>j.svc===n.svc).length;
-    const km=dKm(s.home,n.dist),skill=s.skills.includes(n.svc),open=openFlag(s);
+    const km=dKm(s.home,n.dist),skill=n.svc==='不限'||s.skills.includes(n.svc),open=openFlag(s),busy=busyFlag(s);
     const hist=Math.min(30,served*10+same*7+(svcN-same)*3),rate=(s.rating-3)/2*25,dst=20*Math.max(0,1-km/10)*(skill?1:.6),ld=10*(1-s.load/12),ob=open?15:0;
-    const why=[];if(open)why.push('有開班待命');else why.push('沒開班，需聯絡');if(served)why.push('服務過這位客戶 '+served+' 次');if(same)why.push('同區同類型做過 '+same+' 次');else if(svcN)why.push('做過同類型 '+svcN+' 次');why.push('評價 '+s.rating.toFixed(1)+'★');why.push('住'+DIST[s.home][0]+' 約 '+km.toFixed(1)+' 公里');
-    return{s,open,score:hist+rate+dst+ld+ob,why:why.join('；'),state:null};
-  }).sort((a,b)=>b.score-a.score);
+    const why=[];if(open)why.push(n.date+(n.period?(n.period==='pm'?' 下午':' 上午'):'')+' 有開班待命');else why.push('沒開班，需聯絡');if(served)why.push('服務過這位客戶 '+served+' 次');if(same)why.push('同區同類型做過 '+same+' 次');else if(svcN)why.push('做過同類型 '+svcN+' 次');why.push('評價 '+s.rating.toFixed(1)+'★');why.push('住'+DIST[s.home][0]+' 約 '+km.toFixed(1)+' 公里');
+    return{s,open,busy,score:hist+rate+dst+ld+ob,why:why.join('；'),state:null};
+  }).filter(c=>!c.busy).sort((a,b)=>b.score-a.score);
   cands=[...cands.filter(c=>c.open).slice(0,4),...cands.filter(c=>!c.open).slice(0,2)].sort((a,b)=>b.score-a.score);
   renderCands();showTab('cand');
 }
@@ -674,7 +681,7 @@ function renderCands(){
   const n=curNeed,box=$('#res');
   const nextIdx=cands.findIndex(c=>!c.state);
   const yes=cands.filter(c=>c.state==='yes').length;
-  const head=`<div class="empty" style="color:var(--tx)"><b>${esc(n.date)} ${esc(n.slot)} · ${esc(DIST[n.dist][0])}</b><br>${esc(n.svc)}　${esc(n.client)}　需要 ${n.n} 人（已同意 ${yes} 位）<br><span style="color:var(--mu)">依序聯絡；爬爬看不到 LINE／電話，請在這裡點結果，拒絕只記錄在本頁。</span></div>`;
+  const head=`<div class="empty" style="color:var(--tx)"><b>${esc(n.date)} ${esc(n.slot)} · ${esc(DIST[n.dist][0])}</b><br>${n.svc==='不限'?'':esc(n.svc)+'　'+esc(n.client)+'　'}需要 ${n.n} 人（已同意 ${yes} 位）<br><span style="color:var(--mu)">依序聯絡；爬爬看不到 LINE／電話，請在這裡點結果，拒絕只記錄在本頁。</span></div>`;
   box.innerHTML=head+cands.map((c,i)=>`<div class="cand ${c.state||(i===nextIdx?'next':'')}"><span class="sc">${Math.round(c.score)}</span><b>${i+1}. ${esc(c.s.name)}</b><i class="tg ${c.open?'open':'call'}">${c.open?'有開班':'可聯絡'}</i>${rejects[c.s.id]?`<i class="tg" style="background:var(--bad)">本頁拒絕 ${rejects[c.s.id]}</i>`:''}<span>${esc(c.why)}</span>${c.state?`<span style="color:var(--tx)">${c.state==='yes'?'✔ 已口頭同意':'✕ 對方拒絕（已記錄）'}</span>`:`<div class="bt"><button class="sm pri" data-c="yes" data-i="${i}">已口頭同意</button><button class="sm" data-c="no" data-i="${i}">對方拒絕</button></div>`}</div>`).join('');
 }
 $('#res').addEventListener('click',e=>{
@@ -731,6 +738,15 @@ $('#q').addEventListener('keydown',e=>{if(e.key==='Enter'){runCommand($('#q').va
 const CH=['爬 10/29 出班需求','爬 未確認','爬 沒驗收','爬 預約沒開單','爬 新人上線','爬 報價沒動靜','爬 定期單到期','爬 金額不匹配'];
 $('#chips').innerHTML=CH.map(c=>`<button data-q="${c}">${c.replace('爬 ','')}</button>`).join('');
 $('#chips').onclick=e=>{const b=e.target.closest('button');if(b)runCommand(b.dataset.q.replace('爬 ',''));};
+DIST.forEach((d,i)=>{const o=document.createElement('option');o.value=i;o.textContent=d[0];$('#dz').appendChild(o);});
+function goDispatch(){
+  const m=$('#dd').value.match(/(\d{1,2})\s*[\/月]\s*(\d{1,2})/),t=new Date(Date.now()+864e5);
+  const date=m?(+m[1])+'/'+(+m[2]):(t.getMonth()+1)+'/'+t.getDate(),pm=$('#dp').value==='pm';
+  if(!m)$('#dd').value=date;
+  startDispatch({svc:'不限',dist:+$('#dz').value,date,slot:pm?'下午':'上午',period:pm?'pm':'am',n:1,client:'—'});
+}
+$('#dgo').addEventListener('click',goDispatch);
+$('#dd').addEventListener('keydown',e=>{if(e.key==='Enter')goDispatch();});
 function showTab(t){[...$('#tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='cand'&&cands.length)renderCands();}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.t==='cand'&&!cands.length){$('#res').innerHTML='<div class="empty">在「出班需求」的結果裡按「幫我配班」。</div>';[...$('#tabs').children].forEach(x=>x.classList.toggle('on',x===b));return;}showTab(b.dataset.t);};
 // 配班爬完後出建議
